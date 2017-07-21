@@ -1,56 +1,125 @@
 import matplotlib.pyplot as plt
-import numpy as np 
+import numpy as np
 import pickler.shelf as shelf
 import math
 from DBS.dbgrabber import dbsPull
-import scipy
-TIMESTEPS = 100
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
-SQL = """
-    SELECT  DISTINCT
-        PROG.DescendantID,
-        PROG.Snapno,
-        PROG.CentreOfPotential_x,
-        PROG.CentreOfPotential_y,
-        PROG.CentreOfPotential_z,
-        PROG.Redshift
-    FROM
-        RefL0100N1504_Subhalo as PROG,
-        RefL0100N1504_Aperture as AP
-    WHERE
-        PROG.Mass > 5E10 and
-        PROG.RandomNumber < 0.002 and
-        AP.ApertureSize = 30 and
-        PROG.Spurious = 0 and
-        PROG.CentreOfPotential_x BETWEEN 25 and 75 and
-        PROG.CentreOfPotential_y BETWEEN 25 and 75 and
-        PROG.CentreOfPotential_z BETWEEN 25 and 75
-"""
-filename = "Interesting1.p"
 
-raw_dbs = dbsPull(SQL, filename)
-print raw_dbs
-interesting_gals = {}
-for galsnap in raw_dbs:
-    if galsnap[1] not in interesting_gals.keys():
-        interesting_gals[galsnap[1]] = galsnap
+# SQL = """
+#     SELECT
+#         DES.GalaxyID,
+#         PROG.SnapNum,
+#         PROG.Mass,
+#         PROG.CentreOfPotential_x,
+#         PROG.CentreOfPotential_y,
+#         PROG.CentreOfPotential_z,
+#         PROG.Redshift
+#     FROM
+#         RefL0100N1504_Subhalo as PROG with(forceseek),
+#         RefL0100N1504_Subhalo as DES,
+#         RefL0100N1504_Aperture as AP
+#     WHERE
+#         DES.SnapNum = 28 and
+#         DES.MassType_Star > 1.0e9 and
+#         DES.MassType_DM > 5.0e10 and
+#         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
+#         AP.ApertureSize = 30 and
+#         AP.GalaxyID = DES.GalaxyID and
+#         AP.Mass_Star > 1.0e9
+#     ORDER BY
+#         PROG.GalaxyID,
+#         PROG.SnapNum
+# """
 
-shelf.push(interesting_gals, "IntGalsPSnap")
+# # Grabs new data from db based on sql. If file name already exists, it loads that data instead
 
-interesting_gals = shelf.pull("IntGalsPSnap")
+# filename = "FollowProgs2.p"
 
-def get_camera_pos(t):
-    sgal = interesting_gals[int(math.floor(t))]
-    egal = interesting_gals[int(math.ceil(t))]
-    dt, st = math.modf(t)
-    sx,sy,sz = sgal[2], sgal[3], sgal[4]
-    ex,ey,ez = egal[2], egal[3], egal[4]
-    dx, dy, dz = ex-sx, ey-sy, ez-sz
+# raw_dbs = dbsPull(SQL, filename)
 
-    return sx + dt*dx, sy + dt*dy, sz + dt*dz
+# shelf.push(raw_dbs, "followup2")
+
+dbs_data = shelf.pull("followup2")
+
+
+part_snap_galaxies = [list(gal) for gal in dbs_data if gal[1] == 19]
+#Grabs all snapshot data for a particular galaxy
+part_gal = [list(gal) for gal in dbs_data if gal[0] == 9994243][::-1]
+#Cuts the data down to just x,y,z,rs
+imp_data = [gal[3:] for gal in part_gal]
+interesting_ids = {
+    9994243: 19,
+   10777540: 18, 
+   10351144: 20
+}
+gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
+gals = gals[np.argsort(gals[:,3])]
+def path(frame_no):
+    '''
+    Given a frame number, returns an x,y,z and sf coord for the camera at that frame
+    '''
+    rad = 5
+    orbits = 0.5
+    frames = 100
+    target_galaxy = gals[0]
+    ang_int = orbits * 2*np.pi / frames
+    x_coord = target_galaxy[0] + np.sin(frame_no * ang_int)
+    y_coord = target_galaxy[1] + np.sin(frame_no * ang_int)
+    z_coord = target_galaxy[2] + np.sin(frame_no * ang_int)
+    rs_coord = target_galaxy[3]
+    return numpy.asarray([x_coord, y_coord, z_coord, rs_coord])
+
+
+def nearby(centre_gal, other_gal):
+    '''
+    takes an important galaxy and another, less important galaxy and returns if it is considered close, within 5mpc
+    inputs:
+        centre_gal: important galaxy we are centering on
+        other_gal: another galaxy that may be considered close
+    returns:
+        True/ False: if the other galaxy is within/ not within 5mpc
+    '''
+    if abs(centre_gal[0] - other_gal[0]) < 5.0 and abs(centre_gal[1] - other_gal[1]) < 5.0 and abs(centre_gal[2] - other_gal[2]) < 5.0:
     
-print get_camera_pos(16.4563)
+        return True
+    else:
+        return False
 
-sx, sy, sz = 50.0,50.0,50.0
-tx, ty, tz = 60.0,60.0,60.0
 
+
+
+nearby_gal_datas = [galaxy[3:] for galaxy in part_snap_galaxies if nearby(gal, galaxy[3:])]
+
+
+def get_scalefactors(start_rs, end_rs, frames):
+    start_sf = 1/(1.0 + start_rs)
+    end_sf = 1/(1.0 + end_rs)
+    start_logsf = np.log10(start_sf)
+    end_logsf = np.log10(end_sf)
+    array_log_sf = np.linspace(start_logsf, end_logsf, frames)
+    array_sf = np.power(10, array_log_sf)
+    return array_sf[::-1]
+
+
+
+
+
+
+# np.savetxt("curvedmanygals.txt", coords, fmt="%i %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f", header="RefL0100N1504")
+
+# fns, ts, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(coords) 
+
+
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection="3d")
+
+# ax.plot(xs,ys,zs)
+# ax.scatter(gals[:,0], gals[:,1], gals[:,2], marker="o", s=200.0, c="#682860")
+# for galaxy in nearby_gal_datas:
+#     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
+# ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+# ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+# ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+# plt.show()

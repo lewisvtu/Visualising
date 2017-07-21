@@ -25,7 +25,6 @@ def dbsPull(sql, fname):
         f.close()
         print "Pulling from DB"
         data = dbsQuery(sql)
-        print "Data: ", data
         with open(path, "wb") as pfile:
             pickle.dump(data, pfile)
         return data
