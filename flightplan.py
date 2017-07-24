@@ -1,3 +1,4 @@
+#!/bin/env python2.7
 import matplotlib.pyplot as plt
 import numpy as np
 import pickler.shelf as shelf
@@ -43,83 +44,71 @@ from mpl_toolkits.mplot3d import Axes3D
 
 dbs_data = shelf.pull("followup2")
 
-
-part_snap_galaxies = [list(gal) for gal in dbs_data if gal[1] == 19]
-#Grabs all snapshot data for a particular galaxy
-part_gal = [list(gal) for gal in dbs_data if gal[0] == 9994243][::-1]
-#Cuts the data down to just x,y,z,rs
-imp_data = [gal[3:] for gal in part_gal]
 interesting_ids = {
-    9994243: 19,
-   10777540: 18, 
-   10351144: 20
+    13660659: 19,
+    13660659: 20,
+    13660659: 21,
+    13660659: 22,
+    13660659: 23
+
 }
 gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
+# Makes all galaxies have the form [sf,x,y,z] sorted by sf
+gals[:,-1] = 1.0 / (1.0 + gals[:,-1])
 gals = gals[np.argsort(gals[:,3])]
-def path(frame_no):
+gals = gals[:,[3,0,1,2]]
+
+
+def circular_path(frame_nos, target_coords, args):
     '''
     Given a frame number, returns an x,y,z and sf coord for the camera at that frame
     '''
-    rad = 5
-    orbits = 0.5
-    frames = 100
-    target_galaxy = gals[0]
+    frame_nos = np.asarray(frame_nos)
+    rad = args[0]
+    orbits = args[1]
+    frames = args[2]
     ang_int = orbits * 2*np.pi / frames
-    x_coord = target_galaxy[0] + np.sin(frame_no * ang_int)
-    y_coord = target_galaxy[1] + np.sin(frame_no * ang_int)
-    z_coord = target_galaxy[2] + np.sin(frame_no * ang_int)
-    rs_coord = target_galaxy[3]
-    return numpy.asarray([x_coord, y_coord, z_coord, rs_coord])
+    sf_coords = np.asarray([target_coords[0]]*len(frame_nos))
+    x_coords = target_coords[1] + rad * np.sin(frame_nos * ang_int)
+    y_coords = target_coords[2] + rad * np.cos(frame_nos * ang_int)
+    z_coords = target_coords[3] + rad * np.sin(frame_nos * ang_int)
+    return np.transpose(np.asarray([sf_coords, x_coords, y_coords, z_coords]))
 
-
-def nearby(centre_gal, other_gal):
-    '''
-    takes an important galaxy and another, less important galaxy and returns if it is considered close, within 5mpc
-    inputs:
-        centre_gal: important galaxy we are centering on
-        other_gal: another galaxy that may be considered close
-    returns:
-        True/ False: if the other galaxy is within/ not within 5mpc
-    '''
-    if abs(centre_gal[0] - other_gal[0]) < 5.0 and abs(centre_gal[1] - other_gal[1]) < 5.0 and abs(centre_gal[2] - other_gal[2]) < 5.0:
+def cam_vectors(frame_nos, target_coords, path_function, args):
     
-        return True
-    else:
-        return False
+    frame_nos = np.asarray(frame_nos)
+    start_frames = np.insert(frame_nos, 0, frame_nos[0] - 1)
+    end_frames = np.append(frame_nos, frame_nos[-1] + 1)
+    tangents = path_function(end_frames, target_coords, args) - path_function(start_frames, target_coords, args)
+    tangents = tangents[1:,1:]
+    tangents = tangents / np.linalg.norm(tangents, axis=1)[:,None]
+    return tangents
 
 
-
-
-nearby_gal_datas = [galaxy[3:] for galaxy in part_snap_galaxies if nearby(gal, galaxy[3:])]
-
-
-def get_scalefactors(start_rs, end_rs, frames):
-    start_sf = 1/(1.0 + start_rs)
-    end_sf = 1/(1.0 + end_rs)
-    start_logsf = np.log10(start_sf)
-    end_logsf = np.log10(end_sf)
-    array_log_sf = np.linspace(start_logsf, end_logsf, frames)
+def get_scalefactors(start_sf, end_sf, frames):
+    array_log_sf = np.linspace(np.log10(start_logsf), np.log10(end_logsf), frames)
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
 
+frame_array = np.arange(100)
+
+sfs, xs, ys, zs = np.transpose(circular_path(frame_array, gals[0], [5.0, 1.0, 100]))
+v1xs, v1ys, v1zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, [5.0, 1.0, 100]))
 
 
+# coords = frame_array.append(sfs, xs ,ys, zs)
+# np.savetxt("circularBigGal.txt", coords, fmt="%i %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f", header="RefL0100N1504")
 
+# fns, ts, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(coords)
 
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
 
-# np.savetxt("curvedmanygals.txt", coords, fmt="%i %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f  %.5f", header="RefL0100N1504")
-
-# fns, ts, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(coords) 
-
-
-# fig = plt.figure()
-# ax = fig.add_subplot(111, projection="3d")
-
-# ax.plot(xs,ys,zs)
+#ax.plot(xs,ys,zs)
 # ax.scatter(gals[:,0], gals[:,1], gals[:,2], marker="o", s=200.0, c="#682860")
 # for galaxy in nearby_gal_datas:
 #     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
-# ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
 # ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
 # ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
-# plt.show()
+plt.show()
