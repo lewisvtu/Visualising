@@ -57,35 +57,33 @@ gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_id
 gals[:,-1] = 1.0 / (1.0 + gals[:,-1])
 gals = gals[np.argsort(gals[:,3])]
 gals = gals[:,[3,0,1,2]]
-print gals[-1]
 
-def circular_path(frame_nos, target_coords, args):
+
+def circular_path(frame_nos, args):
     '''
     Given a frame number, returns an x,y,z and sf coord for the camera at that frame
     '''
     frame_nos = np.asarray(frame_nos)
-    rad = args[0]
-    orbits = args[1]
-    frames = args[2]
+    target_coords = np.asarray(args[0])
+    rad = args[1]
+    orbits = args[2]
+    frames = args[3]
     ang_int = orbits * 2*np.pi / frames
-    sf_coords = np.asarray([target_coords[0]]*len(frame_nos))
     x_coords = target_coords[1] + rad * np.sin(frame_nos * ang_int)
     y_coords = target_coords[2] + rad * np.cos(frame_nos * ang_int)
     z_coords = target_coords[3] + rad * np.sin(frame_nos * ang_int)
-    return np.transpose(np.asarray([sf_coords, x_coords, y_coords, z_coords]))
+    return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
 def cam_vectors(frame_nos, target_coords, path_function, args):
-    look_at_dirs = target_coords - path_function(frame_nos, target_coords, args)
-    look_at_dirs = look_at_dirs / np.linalg.norm(look_at_dirs, axis=1)[:,None]
-    frame_nos = np.asarray(frame_nos)
-    start_frames = np.insert(frame_nos, 0, frame_nos[0] - 1)
-    end_frames = np.append(frame_nos, frame_nos[-1] + 1)
-    tangents = path_function(end_frames, target_coords, args) - path_function(start_frames, target_coords, args)
-    tangents = tangents[1:,1:]
-    tangents = tangents / np.linalg.norm(tangents, axis=1)[:,None]
-
-    return np.concatenate((tangents, look_at_dirs), axis=0)
-
+    look_at_dirs = [target_coords[1:]]*len(frame_nos) - path_function(frame_nos, args)
+    #look_at_dirs = look_at_dirs / np.linalg.norm(look_at_dirs, axis=1)[:,None]
+    derivs = np.zeros((len(frame_array), 3))
+    d_frame = 0.1
+    print path_function(frame_nos, args), look_at_dirs
+    for index in range(len(frame_nos)):
+        frame_no = frame_nos[index]
+        derivs[index] = (path_function(frame_no + d_frame/2, args) - path_function(frame_no - d_frame/2, args))/d_frame
+    return np.concatenate((derivs, look_at_dirs), axis=1)
 
 def get_scalefactors(start_sf, end_sf, frames):
     array_log_sf = np.linspace(np.log10(start_logsf), np.log10(end_logsf), frames)
@@ -94,8 +92,8 @@ def get_scalefactors(start_sf, end_sf, frames):
 
 frame_array = np.arange(100)
 
-sfs, xs, ys, zs = np.transpose(circular_path(frame_array, gals[0], [5.0, 1.0, 100]))
-v1xs, v1ys, v1zs, v2xs, v2ys, v2zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, [5.0, 1.0, 100]))
+xs, ys, zs = np.transpose(circular_path(frame_array, [gals[0], 5.0, 1.0, 20]))
+v1xs, v1ys, v1zs, v2xs, v2ys, v2zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, [gals[0], 5.0, 1.0, 4]))
 
 
 # coords = frame_array.append(sfs, xs ,ys, zs)
@@ -105,8 +103,10 @@ v1xs, v1ys, v1zs, v2xs, v2ys, v2zs = np.transpose(cam_vectors(frame_array, gals[
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
-
-#ax.plot(xs,ys,zs)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+ax.plot(xs,ys,zs)
 # ax.scatter(gals[:,0], gals[:,1], gals[:,2], marker="o", s=200.0, c="#682860")
 # for galaxy in nearby_gal_datas:
 #     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
