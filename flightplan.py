@@ -75,14 +75,16 @@ def circular_path(frame_nos, target_coords, args):
     return np.transpose(np.asarray([sf_coords, x_coords, y_coords, z_coords]))
 
 def cam_vectors(frame_nos, target_coords, path_function, args):
-    
+    look_at_dirs = target_coords - path_function(frame_nos, target_coords, args)
+    look_at_dirs = look_at_dirs / np.linalg.norm(look_at_dirs, axis=1)[:,None]
     frame_nos = np.asarray(frame_nos)
     start_frames = np.insert(frame_nos, 0, frame_nos[0] - 1)
     end_frames = np.append(frame_nos, frame_nos[-1] + 1)
     tangents = path_function(end_frames, target_coords, args) - path_function(start_frames, target_coords, args)
     tangents = tangents[1:,1:]
     tangents = tangents / np.linalg.norm(tangents, axis=1)[:,None]
-    return tangents
+
+    return np.concatenate((tangents, look_at_dirs), axis=0)
 
 
 def get_scalefactors(start_sf, end_sf, frames):
@@ -93,7 +95,7 @@ def get_scalefactors(start_sf, end_sf, frames):
 frame_array = np.arange(100)
 
 sfs, xs, ys, zs = np.transpose(circular_path(frame_array, gals[0], [5.0, 1.0, 100]))
-v1xs, v1ys, v1zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, [5.0, 1.0, 100]))
+v1xs, v1ys, v1zs, v2xs, v2ys, v2zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, [5.0, 1.0, 100]))
 
 
 # coords = frame_array.append(sfs, xs ,ys, zs)
@@ -109,6 +111,6 @@ ax = fig.add_subplot(111, projection="3d")
 # for galaxy in nearby_gal_datas:
 #     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
 ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
-# ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
 # ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
 plt.show()
