@@ -96,11 +96,6 @@ xs, ys, zs = np.transpose(circular_path(frame_array, [gals[0], 5.0, 1.0, 20]))
 v1xs, v1ys, v1zs, v2xs, v2ys, v2zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, [gals[0], 5.0, 1.0, 4]))
 
 
-# coords = frame_array.append(sfs, xs ,ys, zs)
-# np.savetxt("circularBigGal.txt", coords, fmt="%i %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f", header="RefL0100N1504")
-
-# fns, ts, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(coords)
-
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
 ax.set_xlabel("x")
