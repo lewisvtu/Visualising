@@ -424,3 +424,9 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
         plt.clf()
 
 #story_board(dbs_data, viewing_distance, txt_name, "line_pointed_9994243.txt")
+
+
+'''hhhhhhhhhhhhhhhh kkkkkkkkkkkkkkkkkkk kkkkkkkkkkkkkkkkk
+dddddddddddddddddd ffffffffffffffffff rrrrrrrrrrrrrrrrr yyyyyyytreddddddddddddddddd
+dddddddddddddd ggggggggggggggggggggg kkkkkkkkkkk shsjnsuger gwuiehrgiunsdfkfjg weiuuiggndfjgp 
+sduhgueh guhghthi erugsoiensnfigsibg nsjdfgfpijg ;isrvs'''
