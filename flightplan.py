@@ -7,7 +7,7 @@ from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-# 
+#
 # SQL = """
 #     SELECT
 #         DES.GalaxyID,
@@ -75,10 +75,10 @@ def circular_path(frame_nos, args):
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
 def cam_vectors(frame_nos, target_coords, path_function, args):
-    look_at_dirs = [target_coords[1:]]*len(frame_nos) - path_function(frame_nos, args)
-    #look_at_dirs = look_at_dirs / np.linalg.norm(look_at_dirs, axis=1)[:,None]
+    look_at_dirs = target_coords[1:] - path_function(frame_nos, args)
+    look_at_dirs = look_at_dirs / np.linalg.norm(look_at_dirs, axis=1)[:,None]
     derivs = np.zeros((len(frame_array), 3))
-    d_frame = 0.1
+    d_frame = 0.01
     print path_function(frame_nos, args), look_at_dirs
     for index in range(len(frame_nos)):
         frame_no = frame_nos[index]
@@ -90,10 +90,11 @@ def get_scalefactors(start_sf, end_sf, frames):
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
 
-frame_array = np.arange(100)
-
-xs, ys, zs = np.transpose(circular_path(frame_array, [gals[0], 5.0, 1.0, 20]))
-v1xs, v1ys, v1zs, v2xs, v2ys, v2zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, [gals[0], 5.0, 1.0, 4]))
+no_of_frames = 20
+frame_array = np.arange(no_of_frames)
+circle_args = [gals[0], 5.0, 1.0, no_of_frames]
+xs, ys, zs = np.transpose(circular_path(frame_array, circle_args))
+v1xs, v1ys, v1zs, v2xs, v2ys, v2zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, circle_args))
 
 
 fig = plt.figure()
@@ -101,7 +102,7 @@ ax = fig.add_subplot(111, projection="3d")
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
-ax.plot(xs,ys,zs)
+# ax.plot(xs,ys,zs)
 # ax.scatter(gals[:,0], gals[:,1], gals[:,2], marker="o", s=200.0, c="#682860")
 # for galaxy in nearby_gal_datas:
 #     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
