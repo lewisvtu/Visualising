@@ -139,7 +139,6 @@ def gen_line(sv, ev, frames, centre_gal):
     direc_Of_travel = direc_Of_travel / np.linalg.norm(direc_Of_travel, axis=1)
 
 
-#Added things!!!
 
     print direc_Of_travel
     vectors[:,0,:] = v_x
@@ -429,6 +428,4 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
 
 
 '''hhhhhhhhhhhhhhhh kkkkkkkkkkkkkkkkkkk kkkkkkkkkkkkkkkkk
-dddddddddddddddddd ffffffffffffffffff rrrrrrrrrrrrrrrrr yyyyyyytreddddddddddddddddd
-dddddddddddddd ggggggggggggggggggggg kkkkkkkkkkk shsjnsuger gwuiehrgiunsdfkfjg weiuuiggndfjgp 
-sduhgueh guhghthi erugsoiensnfigsibg nsjdfgfpijg ;isrvs'''
+dddddddddddddddddd ;isrvs'''
