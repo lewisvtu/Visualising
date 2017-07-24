@@ -7,7 +7,7 @@ from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-
+# 
 # SQL = """
 #     SELECT
 #         DES.GalaxyID,
@@ -33,13 +33,13 @@ from mpl_toolkits.mplot3d import Axes3D
 #         PROG.GalaxyID,
 #         PROG.SnapNum
 # """
-
+#
 # # Grabs new data from db based on sql. If file name already exists, it loads that data instead
-
+#
 # filename = "FollowProgs2.p"
-
+#
 # raw_dbs = dbsPull(SQL, filename)
-
+#
 # shelf.push(raw_dbs, "followup2")
 
 dbs_data = shelf.pull("followup2")
