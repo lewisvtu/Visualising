@@ -45,7 +45,6 @@ from mpl_toolkits.mplot3d import Axes3D
 dbs_data = shelf.pull("followup2")
 
 interesting_ids = {
-    13660659: 19,
     13660659: 20,
     13660659: 21,
     13660659: 22,
