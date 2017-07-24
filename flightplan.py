@@ -49,7 +49,8 @@ interesting_ids = {
     13660659: 20,
     13660659: 21,
     13660659: 22,
-    13660659: 23
+    13660659: 23,
+    13660659: 28
 
 }
 gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
@@ -57,7 +58,7 @@ gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_id
 gals[:,-1] = 1.0 / (1.0 + gals[:,-1])
 gals = gals[np.argsort(gals[:,3])]
 gals = gals[:,[3,0,1,2]]
-
+print gals[-1]
 
 def circular_path(frame_nos, target_coords, args):
     '''
