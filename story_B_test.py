@@ -139,6 +139,8 @@ def gen_line(sv, ev, frames, centre_gal):
     direc_Of_travel = direc_Of_travel / np.linalg.norm(direc_Of_travel, axis=1)
 
 
+#Added things!!!
+
     print direc_Of_travel
     vectors[:,0,:] = v_x
     vectors[:,1,:] = v_y
