@@ -71,7 +71,7 @@ def circular_path(frame_nos, args):
     ang_int = orbits * 2*np.pi / frames
     x_coords = target_coords[1] + rad * np.sin(frame_nos * ang_int)
     y_coords = target_coords[2] + rad * np.cos(frame_nos * ang_int)
-    z_coords = target_coords[3] + rad * np.sin(frame_nos * ang_int)
+    z_coords = target_coords[3] + rad * np.sin(frame_nos * ang_int) * 0
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
 def cam_vectors(frame_nos, target_coords, path_function, args):
@@ -79,10 +79,12 @@ def cam_vectors(frame_nos, target_coords, path_function, args):
     look_at_dirs = look_at_dirs / np.linalg.norm(look_at_dirs, axis=1)[:,None]
     derivs = np.zeros((len(frame_array), 3))
     d_frame = 0.01
-    print path_function(frame_nos, args), look_at_dirs
+    print look_at_dirs
     for index in range(len(frame_nos)):
         frame_no = frame_nos[index]
         derivs[index] = (path_function(frame_no + d_frame/2, args) - path_function(frame_no - d_frame/2, args))/d_frame
+    derivs = derivs / np.linalg.norm(derivs, axis=1)[:,None]
+    print derivs
     return np.concatenate((derivs, look_at_dirs), axis=1)
 
 def get_scalefactors(start_sf, end_sf, frames):
