@@ -82,7 +82,7 @@ def cam_vectors(frame_nos, target_coords, path_function, args):
     print look_at_dirs
     for index in range(len(frame_nos)):
         frame_no = frame_nos[index]
-        derivs[index] = (path_function(frame_no + d_frame/2, args) - path_function(frame_no - d_frame/2, args))/d_frame
+        derivs[index] = path_function(frame_no + d_frame/2, args) - path_function(frame_no - d_frame/2, args)
     derivs = derivs / np.linalg.norm(derivs, axis=1)[:,None]
     print derivs
     return np.concatenate((derivs, look_at_dirs), axis=1)
