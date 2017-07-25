@@ -8,39 +8,39 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
-# SQL = """
-#     SELECT
-#         DES.GalaxyID,
-#         PROG.SnapNum,
-#         PROG.Mass,
-#         PROG.CentreOfPotential_x,
-#         PROG.CentreOfPotential_y,
-#         PROG.CentreOfPotential_z,
-#         PROG.Redshift
-#     FROM
-#         RefL0100N1504_Subhalo as PROG with(forceseek),
-#         RefL0100N1504_Subhalo as DES,
-#         RefL0100N1504_Aperture as AP
-#     WHERE
-#         DES.SnapNum = 28 and
-#         DES.MassType_Star > 1.0e9 and
-#         DES.MassType_DM > 5.0e10 and
-#         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
-#         AP.ApertureSize = 30 and
-#         AP.GalaxyID = DES.GalaxyID and
-#         AP.Mass_Star > 1.0e9
-#     ORDER BY
-#         PROG.GalaxyID,
-#         PROG.SnapNum
-# """
+SQL = """
+    SELECT
+        DES.GalaxyID,
+        PROG.SnapNum,
+        PROG.Mass,
+        PROG.CentreOfPotential_x,
+        PROG.CentreOfPotential_y,
+        PROG.CentreOfPotential_z,
+        PROG.Redshift
+    FROM
+        RefL0100N1504_Subhalo as PROG with(forceseek),
+        RefL0100N1504_Subhalo as DES,
+        RefL0100N1504_Aperture as AP
+    WHERE
+        DES.SnapNum = 28 and
+        DES.MassType_Star > 1.0e9 and
+        DES.MassType_DM > 5.0e10 and
+        PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
+        AP.ApertureSize = 30 and
+        AP.GalaxyID = DES.GalaxyID and
+        AP.Mass_Star > 1.0e9
+    ORDER BY
+        PROG.GalaxyID,
+        PROG.SnapNum
+"""
 
-# # Grabs new data from db based on sql. If file name already exists, it loads that data instead
+# Grabs new data from db based on sql. If file name already exists, it loads that data instead
 
-# filename = "FollowProgs2.p"
+filename = "FollowProgs2.p"
 
-# raw_dbs = dbsPull(SQL, filename)
+raw_dbs = dbsPull(SQL, filename)
 
-# shelf.push(raw_dbs, "followup2")
+shelf.push(raw_dbs, "followup2")
 
 dbs_data = shelf.pull("followup2")
 
@@ -77,7 +77,7 @@ def circular_path(frame_nos, args):
 def cam_vectors(frame_nos, target_coords, path_function, args):
     look_at_dirs = target_coords[1:] - path_function(frame_nos, args)
     look_at_dirs = look_at_dirs / np.linalg.norm(look_at_dirs, axis=1)[:,None]
-    derivs = np.zeros((len(frame_array), 3))
+    derivs = np.zeros((len(frame_nos), 3))
     d_frame = 0.01
     for index in range(len(frame_nos)):
         frame_no = frame_nos[index]
