@@ -29,16 +29,17 @@ thetas = np.array([[pi/2, 0.0, 0.0], [pi/2, pi/2, 0.0], [pi/2, pi/2, pi/2]])
 
 
 Rotation_Marticies = [eulerAnglesToRotationMatrix(theta) for theta in thetas]
+frame, ts, xs, ys, zs, b1,b2,b3,b4,b5,b6,b7,b8,b9 = np.loadtxt("basisTest.txt", unpack=True)
 
+z_basis = np.transpose(np.array([b7, b8, b9]))
+print z_basis
 #z is the look direction therefore we can get the yaw and pitch from them 
 pitch = np.arcsin(z_basis[:,1])
 yaw = np.arctan2(z_basis[:,0], z_basis[:,2])
 roll = [0.0]*len(z_basis)
 print pitch
 
-frame, ts, xs, ys, zs, b1,b2,b3,b4,b5,b6,b7,b8,b9 = np.loadtxt("", unpack=True)
 
-z_basis = np.transpose(np.array([b7, b8, b9]))
 
 
 
@@ -74,9 +75,9 @@ vect45 = np.dot(Rotation_Marticies[0], vectTest)
 vect45_45 = np.dot(Rotation_Marticies[1], vectTest)
 vect45_45_45 = np.dot(Rotation_Marticies[2], vectTest)
 
-ax.quiver(0.,0.,0.,z_basis[0], z_basis[1], z_basis[2], color="r", pivot="tail")
-ax.quiver(0.,0.,0.,vectTest[0], vectTest[1], vectTest[2], color="#682860", pivot="tail")
-ax.quiver(0.,0.,0.,vect45[:,0], vect45[:,1], vect45[:,2], color="k", pivot="tail")
-ax.quiver(0.,0.,0.,vect45_45[:,0], vect45_45[:,1], vect45_45[:,2], color="c", pivot="tail")
-ax.quiver(0.,0.,0.,vect45_45_45[:,0], vect45_45_45[:,1], vect45_45_45[:,2], color="c", pivot="tail")
+ax.quiver(0.,0.,0.,z_basis[0,0], z_basis[0,1], z_basis[0,2], color="r", pivot="tail")
+# ax.quiver(0.,0.,0.,vectTest[0], vectTest[1], vectTest[2], color="#682860", pivot="tail")
+# ax.quiver(0.,0.,0.,vect45[:,0], vect45[:,1], vect45[:,2], color="k", pivot="tail")
+# ax.quiver(0.,0.,0.,vect45_45[:,0], vect45_45[:,1], vect45_45[:,2], color="c", pivot="tail")
+# ax.quiver(0.,0.,0.,vect45_45_45[:,0], vect45_45_45[:,1], vect45_45_45[:,2], color="c", pivot="tail")
 plt.show()
