@@ -89,28 +89,30 @@ def cam_vectors(frame_nos, target_coords, path_function, args):
     basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
     return np.concatenate((basis_1, basis_2, look_at_dirs), axis=1)
 
+
+
 def get_scalefactors(start_sf, end_sf, frames):
     array_log_sf = np.linspace(np.log10(start_logsf), np.log10(end_logsf), frames)
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
 
-no_of_frames = 20
-frame_array = np.arange(no_of_frames)
-circle_args = [gals[0], 5.0, 1.0, no_of_frames]
-xs, ys, zs = np.transpose(circular_path(frame_array, circle_args))
-v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, circle_args))
+# no_of_frames = 20
+# frame_array = np.arange(no_of_frames)
+# circle_args = [gals[0], 5.0, 1.0, no_of_frames]
+# xs, ys, zs = np.transpose(circular_path(frame_array, circle_args))
+# v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, circle_args))
 
 
-fig = plt.figure()
-ax = fig.add_subplot(111, projection="3d")
-ax.set_xlabel("x")
-ax.set_ylabel("y")
-ax.set_zlabel("z")
-# ax.plot(xs,ys,zs)
-# ax.scatter(gals[:,0], gals[:,1], gals[:,2], marker="o", s=200.0, c="#682860")
-# for galaxy in nearby_gal_datas:
-#     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
-ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
-ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
-ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
-plt.show()
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection="3d")
+# ax.set_xlabel("x")
+# ax.set_ylabel("y")
+# ax.set_zlabel("z")
+# # ax.plot(xs,ys,zs)
+# # ax.scatter(gals[:,0], gals[:,1], gals[:,2], marker="o", s=200.0, c="#682860")
+# # for galaxy in nearby_gal_datas:
+# #     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
+# ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+# ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+# ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+# plt.show()
