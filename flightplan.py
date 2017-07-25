@@ -45,10 +45,10 @@ shelf.push(raw_dbs, "followup2")
 dbs_data = shelf.pull("followup2")
 
 interesting_ids = {
-    13660659: 20,
-    13660659: 21,
-    13660659: 22,
-    13660659: 23,
+    # 13660659: 20,
+    # 13660659: 21,
+    # 13660659: 22,
+    # 13660659: 23,
     13660659: 28
 
 }
@@ -61,7 +61,11 @@ gals = gals[:,[3,0,1,2]]
 
 def circular_path(frame_nos, args):
     '''
-    Given a frame number, returns an x,y,z and sf coord for the camera at that frame
+    Given a frame number, returns x,y,z coords for the camera at that frame
+    
+    args:
+        frame_nos: the frame number/ array of frame numbers to compute the positions of
+        args: list of form []
     '''
     frame_nos = np.asarray(frame_nos)
     target_coords = np.asarray(args[0])
@@ -89,30 +93,43 @@ def cam_vectors(frame_nos, target_coords, path_function, args):
     basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
     return np.concatenate((basis_1, basis_2, look_at_dirs), axis=1)
 
-
+def straight_path(frame_nos, args):
+    frame_nos = np.asarray([frame_nos])
+    frames = args[2]
+    start_coords = args[0]
+    end_coords = args[1]
+    c_coords = np.transpose(np.asarray([start_coords]*len(frame_nos))) + np.transpose(np.asarray([end_coords - start_coords]*len(frame_nos))) * (frame_nos/frames)
+    print np.transpose(c_coords)
+    return np.transpose(c_coords)
 
 def get_scalefactors(start_sf, end_sf, frames):
     array_log_sf = np.linspace(np.log10(start_logsf), np.log10(end_logsf), frames)
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
 
-# no_of_frames = 20
-# frame_array = np.arange(no_of_frames)
-# circle_args = [gals[0], 5.0, 1.0, no_of_frames]
-# xs, ys, zs = np.transpose(circular_path(frame_array, circle_args))
-# v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, circle_args))
+no_of_frames = 20
+frame_array = np.arange(no_of_frames, dtype=float)
+sf_array = np.asarray([1.0]*no_of_frames)
+circle_args = [gals[0], 5.0, 1.0, no_of_frames]
+straight_args = [gals[0,1:] + [5,-5,-5], gals[0,1:] + [5,5,5], no_of_frames]
 
+xs, ys, zs = np.transpose(straight_path(frame_array, straight_args))
+# print xs, ys, zs
+v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frame_array, gals[0], straight_path, straight_args))
 
-# fig = plt.figure()
-# ax = fig.add_subplot(111, projection="3d")
-# ax.set_xlabel("x")
-# ax.set_ylabel("y")
-# ax.set_zlabel("z")
-# # ax.plot(xs,ys,zs)
-# # ax.scatter(gals[:,0], gals[:,1], gals[:,2], marker="o", s=200.0, c="#682860")
-# # for galaxy in nearby_gal_datas:
-# #     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
-# ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
-# ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
-# ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
-# plt.show()
+linepoints = np.transpose(np.asarray([frame_array, sf_array, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
+np.savetxt("basisTest.txt", linepoints,fmt='%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f', header='RefL0100N1504',comments='#')
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+# ax.plot(xs,ys,zs)
+ax.scatter(gals[0,1], gals[0,2], gals[0,3], marker="o", s=200.0, c="#682860")
+# for galaxy in nearby_gal_datas:
+#     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
+ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+plt.show()
