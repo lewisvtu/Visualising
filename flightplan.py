@@ -8,39 +8,39 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
-SQL = """
-    SELECT
-        DES.GalaxyID,
-        PROG.SnapNum,
-        PROG.Mass,
-        PROG.CentreOfPotential_x,
-        PROG.CentreOfPotential_y,
-        PROG.CentreOfPotential_z,
-        PROG.Redshift
-    FROM
-        RefL0100N1504_Subhalo as PROG with(forceseek),
-        RefL0100N1504_Subhalo as DES,
-        RefL0100N1504_Aperture as AP
-    WHERE
-        DES.SnapNum = 28 and
-        DES.MassType_Star > 1.0e9 and
-        DES.MassType_DM > 5.0e10 and
-        PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
-        AP.ApertureSize = 30 and
-        AP.GalaxyID = DES.GalaxyID and
-        AP.Mass_Star > 1.0e9
-    ORDER BY
-        PROG.GalaxyID,
-        PROG.SnapNum
-"""
+# SQL = """
+#     SELECT
+#         DES.GalaxyID,
+#         PROG.SnapNum,
+#         PROG.Mass,
+#         PROG.CentreOfPotential_x,
+#         PROG.CentreOfPotential_y,
+#         PROG.CentreOfPotential_z,
+#         PROG.Redshift
+#     FROM
+#         RefL0100N1504_Subhalo as PROG with(forceseek),
+#         RefL0100N1504_Subhalo as DES,
+#         RefL0100N1504_Aperture as AP
+#     WHERE
+#         DES.SnapNum = 28 and
+#         DES.MassType_Star > 1.0e9 and
+#         DES.MassType_DM > 5.0e10 and
+#         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
+#         AP.ApertureSize = 30 and
+#         AP.GalaxyID = DES.GalaxyID and
+#         AP.Mass_Star > 1.0e9
+#     ORDER BY
+#         PROG.GalaxyID,
+#         PROG.SnapNum
+# """
 
-# Grabs new data from db based on sql. If file name already exists, it loads that data instead
+# # Grabs new data from db based on sql. If file name already exists, it loads that data instead
 
-filename = "FollowProgs2.p"
+# filename = "FollowProgs2.p"
 
-raw_dbs = dbsPull(SQL, filename)
+# raw_dbs = dbsPull(SQL, filename)
 
-shelf.push(raw_dbs, "followup2")
+# shelf.push(raw_dbs, "followup2")
 
 dbs_data = shelf.pull("followup2")
 
@@ -71,7 +71,7 @@ def circular_path(frame_nos, args):
     ang_int = orbits * 2*np.pi / frames
     x_coords = target_coords[1] + rad * np.sin(frame_nos * ang_int)
     y_coords = target_coords[2] + rad * np.cos(frame_nos * ang_int)
-    z_coords = target_coords[3] + rad * np.sin(frame_nos * ang_int) * 0
+    z_coords = target_coords[3] + rad * np.sin(frame_nos * ang_int) 
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
 def cam_vectors(frame_nos, target_coords, path_function, args):
@@ -79,13 +79,15 @@ def cam_vectors(frame_nos, target_coords, path_function, args):
     look_at_dirs = look_at_dirs / np.linalg.norm(look_at_dirs, axis=1)[:,None]
     derivs = np.zeros((len(frame_array), 3))
     d_frame = 0.01
-    print look_at_dirs
     for index in range(len(frame_nos)):
         frame_no = frame_nos[index]
         derivs[index] = path_function(frame_no + d_frame/2, args) - path_function(frame_no - d_frame/2, args)
-    derivs = derivs / np.linalg.norm(derivs, axis=1)[:,None]
-    print derivs
-    return np.concatenate((derivs, look_at_dirs), axis=1)
+    #einsum computes the vector dots for each pair in the array
+    basis_1 = derivs - np.transpose(np.einsum("ij,ij->i", derivs, look_at_dirs) * np.transpose(look_at_dirs))
+    basis_1 = basis_1 / np.linalg.norm(basis_1, axis=1)[:,None]
+    basis_2 = np.cross(look_at_dirs, basis_1)
+    basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
+    return np.concatenate((basis_1, basis_2, look_at_dirs), axis=1)
 
 def get_scalefactors(start_sf, end_sf, frames):
     array_log_sf = np.linspace(np.log10(start_logsf), np.log10(end_logsf), frames)
@@ -96,7 +98,7 @@ no_of_frames = 20
 frame_array = np.arange(no_of_frames)
 circle_args = [gals[0], 5.0, 1.0, no_of_frames]
 xs, ys, zs = np.transpose(circular_path(frame_array, circle_args))
-v1xs, v1ys, v1zs, v2xs, v2ys, v2zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, circle_args))
+v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frame_array, gals[0], circular_path, circle_args))
 
 
 fig = plt.figure()
@@ -110,5 +112,5 @@ ax.set_zlabel("z")
 #     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
 ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
 ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
-# ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
 plt.show()
