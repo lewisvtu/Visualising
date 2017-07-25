@@ -7,40 +7,40 @@ from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-#
-# SQL = """
-#     SELECT
-#         DES.GalaxyID,
-#         PROG.SnapNum,
-#         PROG.Mass,
-#         PROG.CentreOfPotential_x,
-#         PROG.CentreOfPotential_y,
-#         PROG.CentreOfPotential_z,
-#         PROG.Redshift
-#     FROM
-#         RefL0100N1504_Subhalo as PROG with(forceseek),
-#         RefL0100N1504_Subhalo as DES,
-#         RefL0100N1504_Aperture as AP
-#     WHERE
-#         DES.SnapNum = 28 and
-#         DES.MassType_Star > 1.0e9 and
-#         DES.MassType_DM > 5.0e10 and
-#         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
-#         AP.ApertureSize = 30 and
-#         AP.GalaxyID = DES.GalaxyID and
-#         AP.Mass_Star > 1.0e9
-#     ORDER BY
-#         PROG.GalaxyID,
-#         PROG.SnapNum
-# """
-#
-# # Grabs new data from db based on sql. If file name already exists, it loads that data instead
-#
-# filename = "FollowProgs2.p"
-#
-# raw_dbs = dbsPull(SQL, filename)
-#
-# shelf.push(raw_dbs, "followup2")
+
+SQL = """
+    SELECT
+        DES.GalaxyID,
+        PROG.SnapNum,
+        PROG.Mass,
+        PROG.CentreOfPotential_x,
+        PROG.CentreOfPotential_y,
+        PROG.CentreOfPotential_z,
+        PROG.Redshift
+    FROM
+        RefL0100N1504_Subhalo as PROG with(forceseek),
+        RefL0100N1504_Subhalo as DES,
+        RefL0100N1504_Aperture as AP
+    WHERE
+        DES.SnapNum = 28 and
+        DES.MassType_Star > 1.0e9 and
+        DES.MassType_DM > 5.0e10 and
+        PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
+        AP.ApertureSize = 30 and
+        AP.GalaxyID = DES.GalaxyID and
+        AP.Mass_Star > 1.0e9
+    ORDER BY
+        PROG.GalaxyID,
+        PROG.SnapNum
+"""
+
+# Grabs new data from db based on sql. If file name already exists, it loads that data instead
+
+filename = "FollowProgs2.p"
+
+raw_dbs = dbsPull(SQL, filename)
+
+shelf.push(raw_dbs, "followup2")
 
 dbs_data = shelf.pull("followup2")
 
