@@ -111,14 +111,22 @@ no_of_frames = 20
 frame_array = np.arange(no_of_frames, dtype=float)
 sf_array = np.asarray([1.0]*no_of_frames)
 circle_args = [gals[0], 5.0, 1.0, no_of_frames]
-straight_args = [gals[0,1:] + [5,-5,-5], gals[0,1:] + [5,5,5], no_of_frames]
+straight_args = [gals[0,1:] + [0,0,-5], gals[0,1:] + [0,0,5], no_of_frames]
 
 xs, ys, zs = np.transpose(straight_path(frame_array, straight_args))
 # print xs, ys, zs
-v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frame_array, gals[0], straight_path, straight_args))
-
+# v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frame_array, gals[0], straight_path, straight_args))
+v1xs =[1]*no_of_frames
+v1ys =[0]*no_of_frames
+v1zs =[0]*no_of_frames
+v2xs =[0]*no_of_frames
+v2ys =[1]*no_of_frames
+v2zs =[0]*no_of_frames
+v3xs =[0]*no_of_frames
+v3ys =[0]*no_of_frames
+v3zs =[1]*no_of_frames
 linepoints = np.transpose(np.asarray([frame_array, sf_array, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
-np.savetxt("basisTest.txt", linepoints,fmt='%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f', header='RefL0100N1504',comments='#')
+np.savetxt("basisTest2.txt", linepoints,fmt='%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f', header='RefL0100N1504',comments='#')
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
