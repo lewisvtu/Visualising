@@ -45,11 +45,9 @@ shelf.push(raw_dbs, "followup2")
 dbs_data = shelf.pull("followup2")
 
 interesting_ids = {
-    # 13660659: 20,
-    # 13660659: 21,
-    # 13660659: 22,
-    # 13660659: 23,
-    13660659: 28
+    13660659: 28,
+    13793733: 28,
+    13722615: 28
 
 }
 gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
@@ -74,8 +72,8 @@ def circular_path(frame_nos, args):
     orbits = args[2]
     frames = args[3]
     ang_int = orbits * 2*np.pi / frames
-    x_coords = target_coords[0] + rad * (frames - decay * frame_nos + 1)/(decay *frames) * np.sin(frame_nos * ang_int)
-    y_coords = target_coords[1] + rad * (frames - decay * frame_nos + 1)/(decay *frames) * np.cos(frame_nos * ang_int)
+    x_coords = target_coords[0] + rad * np.sin(frame_nos * ang_int)
+    y_coords = target_coords[1] + rad * np.cos(frame_nos * ang_int)
     z_coords = target_coords[2] + (rad* np.sin(frame_nos * ang_int)) * 0
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
@@ -133,10 +131,28 @@ def draw_graph(file_name, target_gal):
     ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
     plt.show()
 
-no_of_frames = 50
-circle_args = [gals[0,1:], 5.0, 1.0, no_of_frames]
-straight_args = [gals[0,1:] + [5,0,-5], gals[0,1:] + [5,0,5], no_of_frames]
-file_name = "C_path_r=5_o=1_f=50.txt"
-gen_file(no_of_frames, gals[0], circular_path, circle_args, file_name)
-draw_graph(file_name, gals[0,1:])
+
+first_frames = np.arange(10, dtype=float)
+sec_frames = np.arange(10, dtype=float) + 20
+third_frames = np.arange(10, dtype=float) + 40
+first_coords = np.transpose(circular_path(first_frames, [gals[0,1:], 5.0, 0.5, 10]))
+sec_coords = np.transpose(circular_path(sec_frames, [gals[1,1:], 5.0, 0.5, 10]))
+third_coords = np.transpose(circular_path(third_frames, [gals[2,1:], 5.0, 0.5, 10]))
+print first_coords, sec_coords, third_coords
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+ax.plot(first_coords[0], first_coords[1], first_coords[2])
+ax.plot(sec_coords[0], sec_coords[1], sec_coords[2])
+ax.plot(third_coords[0], third_coords[1], third_coords[2])
+plt.show()
+
+# no_of_frames = 50
+# circle_args = [gals[0,1:], 5.0, 1.0, no_of_frames]
+# straight_args = [gals[0,1:] + [5,0,-5], gals[0,1:] + [5,0,5], no_of_frames]
+# file_name = "C_path_r=5_o=1_f=50.txt"
+# gen_file(no_of_frames, gals[0], circular_path, circle_args, file_name)
+# draw_graph(file_name, gals[0,1:])
 
