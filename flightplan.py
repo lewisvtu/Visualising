@@ -107,7 +107,6 @@ def get_scalefactors(start_sf, end_sf, frames):
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
 
-<<<<<<< HEAD
 def gen_file(no_of_frames, target_gal, path_function, path_args, file_name):
     frame_array = np.arange(no_of_frames, dtype=float)
     sf_array = np.asarray([1.0]*no_of_frames)
