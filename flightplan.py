@@ -67,15 +67,16 @@ def circular_path(frame_nos, args):
         frame_nos: the frame number/ array of frame numbers to compute the positions of
         args: list of form []
     '''
+    decay = 0.5
     frame_nos = np.asarray(frame_nos)
     target_coords = np.asarray(args[0])
     rad = args[1]
     orbits = args[2]
     frames = args[3]
     ang_int = orbits * 2*np.pi / frames
-    x_coords = target_coords[1] + rad * np.sin(frame_nos * ang_int)
-    y_coords = target_coords[2] + rad * np.cos(frame_nos * ang_int)
-    z_coords = target_coords[3] + rad * np.sin(frame_nos * ang_int)
+    x_coords = target_coords[0] + rad * (frames - decay * frame_nos + 1)/(decay *frames) * np.sin(frame_nos * ang_int)
+    y_coords = target_coords[1] + rad * (frames - decay * frame_nos + 1)/(decay *frames) * np.cos(frame_nos * ang_int)
+    z_coords = target_coords[2] + (rad* np.sin(frame_nos * ang_int)) * 0
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
 def cam_vectors(frame_nos, target_coords, path_function, args):
@@ -99,7 +100,6 @@ def straight_path(frame_nos, args):
     start_coords = args[0]
     end_coords = args[1]
     c_coords = np.transpose(np.asarray([start_coords]*len(frame_nos))) + np.transpose(np.asarray([end_coords - start_coords]*len(frame_nos))) * (frame_nos/frames)
-    print np.transpose(c_coords)
     return np.transpose(c_coords)
 
 def get_scalefactors(start_sf, end_sf, frames):
@@ -107,30 +107,36 @@ def get_scalefactors(start_sf, end_sf, frames):
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
 
-no_of_frames = 20
-frame_array = np.arange(no_of_frames, dtype=float)
-sf_array = np.asarray([1.0]*no_of_frames)
-circle_args = [gals[0], 5.0, 1.0, no_of_frames]
+def gen_file(no_of_frames, target_gal, path_function, path_args, file_name):
+    frame_array = np.arange(no_of_frames, dtype=float)
+    sf_array = np.asarray([1.0]*no_of_frames)
+    xs, ys, zs = np.transpose(path_function(frame_array, path_args))
+    v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frame_array, target_gal, path_function, path_args))
+    linepoints = np.transpose(np.asarray([frame_array, sf_array, xs*h, ys*h, zs*h, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
+    np.savetxt(file_name, linepoints,fmt='%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f', header='RefL0100N1504',comments='#')
+    print "Saved to file: " + file_name
 
-straight_args = [gals[0,1:] + [0,0,-5], gals[0,1:] + [0,0,0], no_of_frames]
+def draw_graph(file_name, target_gal):
+    fs, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(np.loadtxt(file_name))
+    fig = plt.figure()
+    xs, ys, zs = xs/h, ys/h, zs/h
+    ax = fig.add_subplot(111, projection="3d")
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_zlabel("z")
+    # ax.plot(xs,ys,zs)
+    #ax.scatter(target_gal[0], target_gal[1], target_gal[2], marker="o", s=200.0, c="#682860")
+    # for galaxy in nearby_gal_datas:
+    #     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
+    ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+    ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+    ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+    plt.show()
 
-xs, ys, zs = np.transpose(straight_path(frame_array, straight_args))
-# print xs, ys, zs
-v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = [1]*no_of_frames, [0]*no_of_frames, [0]*no_of_frames, [0]*no_of_frames, [1]*no_of_frames, [0]*no_of_frames, [0]*no_of_frames, [0]*no_of_frames, [1]*no_of_frames
+no_of_frames = 50
+circle_args = [gals[0,1:], 5.0, 1.0, no_of_frames]
+straight_args = [gals[0,1:] + [5,0,-5], gals[0,1:] + [5,0,5], no_of_frames]
+file_name = "C_path_r=5_o=1_f=50.txt"
+gen_file(no_of_frames, gals[0], circular_path, circle_args, file_name)
+draw_graph(file_name, gals[0,1:])
 
-linepoints = np.transpose(np.asarray([frame_array, sf_array, xs*h, ys*h, zs*h, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
-np.savetxt("basisTest.txt", linepoints,fmt='%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f', header='RefL0100N1504',comments='#')
-
-fig = plt.figure()
-ax = fig.add_subplot(111, projection="3d")
-ax.set_xlabel("x")
-ax.set_ylabel("y")
-ax.set_zlabel("z")
-# ax.plot(xs,ys,zs)
-ax.scatter(gals[0,1], gals[0,2], gals[0,3], marker="o", s=200.0, c="#682860")
-# for galaxy in nearby_gal_datas:
-#     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
-ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
-ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
-ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
-plt.show()
