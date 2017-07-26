@@ -7,7 +7,7 @@ from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-
+h = 0.6777
 SQL = """
     SELECT
         DES.GalaxyID,
@@ -62,7 +62,7 @@ gals = gals[:,[3,0,1,2]]
 def circular_path(frame_nos, args):
     '''
     Given a frame number, returns x,y,z coords for the camera at that frame
-    
+
     args:
         frame_nos: the frame number/ array of frame numbers to compute the positions of
         args: list of form []
@@ -75,7 +75,7 @@ def circular_path(frame_nos, args):
     ang_int = orbits * 2*np.pi / frames
     x_coords = target_coords[1] + rad * np.sin(frame_nos * ang_int)
     y_coords = target_coords[2] + rad * np.cos(frame_nos * ang_int)
-    z_coords = target_coords[3] + rad * np.sin(frame_nos * ang_int) 
+    z_coords = target_coords[3] + rad * np.sin(frame_nos * ang_int)
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
 def cam_vectors(frame_nos, target_coords, path_function, args):
@@ -111,13 +111,13 @@ no_of_frames = 20
 frame_array = np.arange(no_of_frames, dtype=float)
 sf_array = np.asarray([1.0]*no_of_frames)
 circle_args = [gals[0], 5.0, 1.0, no_of_frames]
-straight_args = [gals[0,1:] + [5,-5,-5], gals[0,1:] + [5,5,5], no_of_frames]
+straight_args = [gals[0,1:] + [0,0,-5], gals[0,1:] + [0,0,0], no_of_frames]
 
 xs, ys, zs = np.transpose(straight_path(frame_array, straight_args))
 # print xs, ys, zs
-v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frame_array, gals[0], straight_path, straight_args))
+v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = [1]*no_of_frames, [0]*no_of_frames, [0]*no_of_frames, [0]*no_of_frames, [1]*no_of_frames, [0]*no_of_frames, [0]*no_of_frames, [0]*no_of_frames, [1]*no_of_frames
 
-linepoints = np.transpose(np.asarray([frame_array, sf_array, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
+linepoints = np.transpose(np.asarray([frame_array, sf_array, xs*h, ys*h, zs*h, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
 np.savetxt("basisTest.txt", linepoints,fmt='%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f', header='RefL0100N1504',comments='#')
 
 fig = plt.figure()
