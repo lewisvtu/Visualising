@@ -1,3 +1,5 @@
 DBS/
 pickler/
-*.pyc
+**.pyc
+**.txt
+**.p
