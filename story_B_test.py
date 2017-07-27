@@ -195,11 +195,11 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
     path_of_camera = np.loadtxt(path_file)
     frame, ts, xs, ys, zs, b1,b2,b3,b4,b5,b6,b7,b8,b9 = np.loadtxt(path_file, unpack=True)
 
-    z_basis_s = np.transpose(np.array([b7, b8, b9]))
-    y_basis_s = np.transpose(np.array([b4, b5, b6]))
-    x_basis_s = np.transpose(np.array([b1, b2, b3]))
-    cam_position_s = np.transpose(np.array([xs, ys, zs]))
-
+    z_basis_s = np.transpose(np.asarray([b7, b8, b9]))
+    y_basis_s = np.transpose(np.asarray([b4, b5, b6]))
+    x_basis_s = np.transpose(np.asarray([b1, b2, b3]))
+    #cam_position_s = np.transpose(np.array([xs, ys, zs]))
+    print x_basis_s
 
 
 
@@ -216,13 +216,23 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
     #to find the scale factor at the snapshot you are at and to find the nearest x,y,z from the flight path
     Inclusive_snapshots = Expansion_F_snaps[idx:idxL+1]
     Line_plots_shown = []
+    z_basis = []
+    y_basis = []
+    x_basis = []
 
     for Inclusive_snap in Inclusive_snapshots:
 
         index = (np.abs(ts - Inclusive_snap)).argmin()
         Line_plots_shown.append([xs[index], ys[index], zs[index]])
+        z_basis.append(z_basis_s[index])
+        y_basis.append(y_basis_s[index])
+        x_basis.append(x_basis_s[index])
     
-    print Line_plots_shown
+    x_basis = np.asarray(x_basis)
+    y_basis = np.asarray(y_basis)
+    z_basis = np.asarray(z_basis)
+    print x_basis
+    #print Line_plots_shown
 
 
     data = dbs_data
@@ -266,26 +276,15 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
         center_y = Line_plots_shown[i][1]
         center_z = Line_plots_shown[i][2]
 
-        cam_position = np.transpose(np.array([center_x, center_y, center_z]))[0]
+        cam_position = np.transpose(np.array([center_x, center_y, center_z]))
+        #print cam_position
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        x_bas = x_basis[i]
+        print "this is the x basis xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        print x_bas
+        y_bas = y_basis[i]
+        z_bas = z_basis[i]
 
 
 
@@ -296,12 +295,15 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
             if (abs((xyz_glas[j][0] - center_x)) <=viewing_distance and abs((xyz_glas[j][1] - center_y)) <=viewing_distance
                 and abs((xyz_glas[j][2] - center_z)) <=viewing_distance):
                 
-                particles = np.transpose(np.array([xyz_glas[j][0], xyz_glas[j][1], xyz_glas[j][2]]))
+                particles = np.transpose( np.array([[xyz_glas[j][0]], [xyz_glas[j][1]], [xyz_glas[j][2]]]) )
+                print "these are the particles"
+                print particles
 
-                perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
 
+                
 
-                too_close_behind.append(xyz_glas[j])
+				#xyz_glas[j]
+                too_close_behind.append(perspective_transfomation(x_bas, y_bas, z_bas, cam_position, particles))
 
 
 
@@ -312,8 +314,8 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
 
         labels = nparr1[:,3]
         #print nparr1
-        nparrii = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
-        plt.scatter(nparrii[:,0],nparrii[:,1],marker='x', c='b', s=50.) 
+        #nparrii = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
+        plt.scatter(nparr1[:,0],nparr1[:,1],marker='x', c='b', s=50.) 
         
         for g, txt in enumerate(labels):
             plt.annotate(txt, (nparr1[g][0],nparr1[g][1]))
@@ -321,7 +323,7 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
         sf_time = Inclusive_snapshots[i]
 
         plt.title("Scale Factor: " + str(sf_time), loc='left', size=16)
-        #plt.scatter(center_x,center_y,marker='o',s=200.0, c ='r')
+        plt.scatter(center_x,center_y,marker='o',s=200.0, c ='r')
         #plt.ylim(center_y - viewing_distance, center_y + viewing_distance)
         #plt.xlim(center_x - viewing_distance, center_x + viewing_distance)
         plt.savefig(txt_name + str(i+15))
