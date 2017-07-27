@@ -46,16 +46,10 @@ shelf.push(raw_dbs, "followup2")
 dbs_data = shelf.pull("followup2")
 
 interesting_ids = {
-<<<<<<< HEAD
-    # 13660659: 28,
-    # 13793733: 28,
-    # 13722615: 28
-    14784533: 28
-=======
+
     13660659: 28,
     13793733: 28,
     13722615: 28
->>>>>>> c89193123abcc2538bbd3ac0baf4a435f01e8a4e
 
 }
 gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
@@ -142,30 +136,30 @@ def draw_graph(file_name, target_gal):
     plt.show()
 
 
-first_frames = np.arange(10, dtype=float)
-sec_frames = np.arange(10, dtype=float) + 20
-third_frames = np.arange(10, dtype=float) + 40
-first_coords = circular_path(first_frames, [gals[0,1:], 5.0, 1, 10, -1])
-sec_coords = circular_path(sec_frames, [gals[1,1:], 5.0, 1, 10, 1])
-third_coords = circular_path(third_frames, [gals[2,1:], 5.0, 1, 10, 1])
+# first_frames = np.arange(20, dtype=float)
+# sec_frames = np.arange(20, dtype=float) + 40
+# third_frames = np.arange(20, dtype=float) + 80
+# first_coords = circular_path(first_frames, [gals[0,1:], 5.0, 1, 20, -1])
+# sec_coords = circular_path(sec_frames, [gals[1,1:], 5.0, 1, 20, 1])
+# third_coords = circular_path(third_frames, [gals[2,1:], 5.0, 1, 20, 1])
 
-fks = np.concatenate((first_frames, sec_frames, third_frames))
-xks = np.concatenate((first_coords[:,0], sec_coords[:,0], third_coords[:,0]))
-yks = np.concatenate((first_coords[:,1], sec_coords[:,1], third_coords[:,1]))
-zks = np.concatenate((first_coords[:,2], sec_coords[:,2], third_coords[:,2]))
+# fks = np.concatenate((first_frames, sec_frames, third_frames))
+# xks = np.concatenate((first_coords[:,0], sec_coords[:,0], third_coords[:,0]))
+# yks = np.concatenate((first_coords[:,1], sec_coords[:,1], third_coords[:,1]))
+# zks = np.concatenate((first_coords[:,2], sec_coords[:,2], third_coords[:,2]))
 
-frame_array = np.arange(50)
-xs = spline(fks, xks, frame_array)
-ys = spline(fks, yks, frame_array)
-zs = spline(fks, zks, frame_array)
-fig = plt.figure()
-ax = fig.add_subplot(111, projection="3d")
-ax.set_xlabel("x")
-ax.set_ylabel("y")
-ax.set_zlabel("z")
-ax.plot(xs, ys, zs)
+# frame_array = np.arange(100)
+# xs = spline(fks, xks, frame_array)
+# ys = spline(fks, yks, frame_array)
+# zs = spline(fks, zks, frame_array)
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection="3d")
+# ax.set_xlabel("x")
+# ax.set_ylabel("y")
+# ax.set_zlabel("z")
+# ax.plot(xs, ys, zs)
 
-plt.show()
+# plt.show()
 
 
 # no_of_frames = 50
