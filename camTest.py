@@ -30,7 +30,8 @@ print thetas
 
 
 
-z_basis = np.transpose(np.array([b7, b8, b9]))[0]
+z_basis = np.transpose(np.array([b7, b8, b9]))
+print z_basis
 y_basis = np.transpose(np.array([b4, b5, b6]))[0]
 x_basis = np.transpose(np.array([b1, b2, b3]))[0]
 cam_position = np.transpose(np.array([xs, ys, zs]))[0]

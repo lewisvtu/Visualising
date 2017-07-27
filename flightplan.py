@@ -9,53 +9,54 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import spline
 
 h = 0.6777
-# SQL = """
-#     SELECT
-#         DES.GalaxyID,
-#         PROG.SnapNum,
-#         PROG.Mass,
-#         PROG.CentreOfPotential_x,
-#         PROG.CentreOfPotential_y,
-#         PROG.CentreOfPotential_z,
-#         PROG.Redshift
-#     FROM
-#         RefL0100N1504_Subhalo as PROG with(forceseek),
-#         RefL0100N1504_Subhalo as DES,
-#         RefL0100N1504_Aperture as AP
-#     WHERE
-#         DES.SnapNum = 28 and
-#         DES.MassType_Star > 1.0e9 and
-#         DES.MassType_DM > 5.0e10 and
-#         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
-#         AP.ApertureSize = 30 and
-#         AP.GalaxyID = DES.GalaxyID and
-#         AP.Mass_Star > 1.0e9
-#     ORDER BY
-#         PROG.GalaxyID,
-#         PROG.SnapNum
-# """
+SQL = """
+    SELECT
+        DES.GalaxyID,
+        PROG.SnapNum,
+        PROG.Mass,
+        PROG.CentreOfPotential_x,
+        PROG.CentreOfPotential_y,
+        PROG.CentreOfPotential_z,
+        PROG.Redshift
+    FROM
+        RefL0100N1504_Subhalo as PROG with(forceseek),
+        RefL0100N1504_Subhalo as DES,
+        RefL0100N1504_Aperture as AP
+    WHERE
+        DES.SnapNum = 28 and
+        DES.MassType_Star > 1.0e9 and
+        DES.MassType_DM > 5.0e10 and
+        PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
+        AP.ApertureSize = 30 and
+        AP.GalaxyID = DES.GalaxyID and
+        AP.Mass_Star > 1.0e9
+    ORDER BY
+        PROG.GalaxyID,
+        PROG.SnapNum
+"""
 
-# # Grabs new data from db based on sql. If file name already exists, it loads that data instead
+# Grabs new data from db based on sql. If file name already exists, it loads that data instead
 
-# filename = "FollowProgs2.p"
+filename = "FollowProgs2.p"
 
-# raw_dbs = dbsPull(SQL, filename)
+raw_dbs = dbsPull(SQL, filename)
 
-# shelf.push(raw_dbs, "followup2")
+shelf.push(raw_dbs, "followup2")
 
-# dbs_data = shelf.pull("followup2")
+dbs_data = shelf.pull("followup2")
 
-# interesting_ids = {
-#     13660659: 28,
-#     13793733: 28,
-#     13722615: 28
+interesting_ids = {
+    # 13660659: 28,
+    # 13793733: 28,
+    # 13722615: 28
+    14784533: 28
 
-# }
-# gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
-# # Makes all galaxies have the form [sf,x,y,z] sorted by sf
-# gals[:,-1] = 1.0 / (1.0 + gals[:,-1])
-# gals = gals[np.argsort(gals[:,3])]
-# gals = gals[:,[3,0,1,2]]
+}
+gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
+# Makes all galaxies have the form [sf,x,y,z] sorted by sf
+gals[:,-1] = 1.0 / (1.0 + gals[:,-1])
+gals = gals[np.argsort(gals[:,3])]
+gals = gals[:,[3,0,1,2]]
 
 
 def circular_path(frame_nos, args):
@@ -112,6 +113,7 @@ def gen_file(no_of_frames, target_gal, path_function, path_args, file_name):
     sf_array = np.asarray([1.0]*no_of_frames)
     xs, ys, zs = np.transpose(path_function(frame_array, path_args))
     v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frame_array, target_gal, path_function, path_args))
+    #v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = [1]*no_of_frames,[0]*no_of_frames,[0]*no_of_frames,[0]*no_of_frames,[1]*no_of_frames,[0]*no_of_frames,[0]*no_of_frames,[0]*no_of_frames,[1]*no_of_frames
     linepoints = np.transpose(np.asarray([frame_array, sf_array, xs*h, ys*h, zs*h, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
     np.savetxt(file_name, linepoints,fmt='%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f', header='RefL0100N1504',comments='#')
     print "Saved to file: " + file_name
@@ -159,10 +161,11 @@ def draw_graph(file_name, target_gal):
 
 # plt.show()
 
-# no_of_frames = 50
-# circle_args = [gals[0,1:], 5.0, 1.0, no_of_frames]
-# straight_args = [gals[0,1:] + [5,0,-5], gals[0,1:] + [5,0,5], no_of_frames]
-# file_name = "C_path_r=5_o=1_f=50.txt"
-# gen_file(no_of_frames, gals[0], circular_path, circle_args, file_name)
-# draw_graph(file_name, gals[0,1:])
+no_of_frames = 50
+circle_args = [gals[0,1:], 5.0, 1.0, no_of_frames, 1]
+straight_args = [gals[0,1:] + [0,0,-5], gals[0,1:] + [0,0,5], no_of_frames]
+print gals
+file_name = "gla200_0_orbit.txt"
+gen_file(no_of_frames, gals[0], circular_path, circle_args, file_name)
+draw_graph(file_name, gals[0,1:])
 

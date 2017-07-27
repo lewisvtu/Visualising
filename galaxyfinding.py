@@ -26,8 +26,8 @@ SQL = """
         DES.SnapNum = 28 and
         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
         AP.GalaxyID = DES.GalaxyID and
-        DES.GroupNumber IN (100, 125, 150) and
-        DES.SubGroupNumber = 1
+        DES.GroupNumber IN (200) and
+        DES.SubGroupNumber = 0
     ORDER BY
         PROG.GalaxyID,
         PROG.SnapNum
