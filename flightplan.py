@@ -46,16 +46,11 @@ shelf.push(raw_dbs, "followup2")
 dbs_data = shelf.pull("followup2")
 
 interesting_ids = {
-<<<<<<< HEAD
-    # 13660659: 28,
-    # 13793733: 28,
-    # 13722615: 28
-    14784533: 28
-=======
+
     13660659: 28,
     13793733: 28,
     13722615: 28
->>>>>>> c89193123abcc2538bbd3ac0baf4a435f01e8a4e
+
 
 }
 gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
