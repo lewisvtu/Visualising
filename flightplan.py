@@ -111,11 +111,13 @@ def circular_path(frame_nos, args):
     orbits = args[2]
     frames = args[3]
     dir = args[4]
+
     z_factor = args[5]
     ang_int = orbits * 2*np.pi / frames
     x_coords = target_coords[0] + dir * rad * np.sin(frame_nos * ang_int)
     y_coords = target_coords[1] + dir * rad * np.cos(frame_nos * ang_int)
     z_coords = target_coords[2] + dir * (rad* np.sin(frame_nos * ang_int)) * z_factor
+
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
 # def deriv_vectors(frame_nos, target_coords, path_function, args):
@@ -146,8 +148,6 @@ def get_scalefactors(start_sf, end_sf, frames):
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
 
-
-
 class spline3D():
 
     def __init__(self, bundle):
@@ -176,16 +176,14 @@ collection = np.asarray([
 everything = path(60, collection)
 xs, ys, zs = np.transpose(everything.coords)
 v3xs, v3ys, v3zs = np.transpose(everything.look_at_dirs)
-# frame_array = np.arange(100)
-# xs = spline(fks, xks, frame_array)
-# ys = spline(fks, yks, frame_array)
-# zs = spline(fks, zks, frame_array)
+
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
 ax.plot(xs, ys, zs)
+
 ax.scatter(gals[0,1], gals[0,2], gals[0,3])
 ax.scatter(gals[2,1], gals[2,2], gals[2,3])
 # ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
@@ -194,9 +192,3 @@ ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
 plt.show()
 
 print gals
-# no_of_frames = 50
-# circle_args = [gals[0,1:], 5.0, 1.0, no_of_frames]
-# straight_args = [gals[0,1:] + [5,0,-5], gals[0,1:] + [5,0,5], no_of_frames]
-# file_name = "C_path_r=5_o=1_f=50.txt"
-# gen_file(no_of_frames, gals[0], circular_path, circle_args, file_name)
-# draw_graph(file_name, gals[0,1:])
