@@ -74,10 +74,11 @@ def circular_path(frame_nos, args):
     orbits = args[2]
     frames = args[3]
     dir = args[4]
+    zoff = args[5]
     ang_int = orbits * 2*np.pi / frames
     x_coords = target_coords[0] + dir * rad * np.sin(frame_nos * ang_int)
     y_coords = target_coords[1] + dir * rad * np.cos(frame_nos * ang_int)
-    z_coords = target_coords[2] + dir * (rad* np.sin(frame_nos * ang_int)) * 0.5
+    z_coords = target_coords[2] + dir * (rad* np.sin(frame_nos * ang_int)) * zoff
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
 def cam_vectors(frame_nos, target_coords, path_function, args):
@@ -136,30 +137,30 @@ def draw_graph(file_name, target_gal):
     plt.show()
 
 
-# first_frames = np.arange(20, dtype=float)
-# sec_frames = np.arange(20, dtype=float) + 40
-# third_frames = np.arange(20, dtype=float) + 80
-# first_coords = circular_path(first_frames, [gals[0,1:], 5.0, 1, 20, -1])
-# sec_coords = circular_path(sec_frames, [gals[1,1:], 5.0, 1, 20, 1])
-# third_coords = circular_path(third_frames, [gals[2,1:], 5.0, 1, 20, 1])
+first_frames = np.arange(20, dtype=float)
+sec_frames = np.arange(20, dtype=float) + 40
+third_frames = np.arange(20, dtype=float) + 80
+first_coords = circular_path(first_frames, [gals[0,1:], 5.0, 1, 20, -1, 1])
+sec_coords = circular_path(sec_frames, [gals[1,1:], 5.0, 1, 20, 1, 0.5])
+third_coords = circular_path(third_frames, [gals[2,1:], 5.0, 1, 20, 1, -1])
 
-# fks = np.concatenate((first_frames, sec_frames, third_frames))
-# xks = np.concatenate((first_coords[:,0], sec_coords[:,0], third_coords[:,0]))
-# yks = np.concatenate((first_coords[:,1], sec_coords[:,1], third_coords[:,1]))
-# zks = np.concatenate((first_coords[:,2], sec_coords[:,2], third_coords[:,2]))
+fks = np.concatenate((first_frames, sec_frames, third_frames))
+xks = np.concatenate((first_coords[:,0], sec_coords[:,0], third_coords[:,0]))
+yks = np.concatenate((first_coords[:,1], sec_coords[:,1], third_coords[:,1]))
+zks = np.concatenate((first_coords[:,2], sec_coords[:,2], third_coords[:,2]))
 
-# frame_array = np.arange(100)
-# xs = spline(fks, xks, frame_array)
-# ys = spline(fks, yks, frame_array)
-# zs = spline(fks, zks, frame_array)
-# fig = plt.figure()
-# ax = fig.add_subplot(111, projection="3d")
-# ax.set_xlabel("x")
-# ax.set_ylabel("y")
-# ax.set_zlabel("z")
-# ax.plot(xs, ys, zs)
+frame_array = np.arange(100)
+xs = spline(fks, xks, frame_array)
+ys = spline(fks, yks, frame_array)
+zs = spline(fks, zks, frame_array)
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+ax.plot(xs, ys, zs)
 
-# plt.show()
+plt.show()
 
 
 # no_of_frames = 50

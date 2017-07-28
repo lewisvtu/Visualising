@@ -220,19 +220,38 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
     y_basis = []
     x_basis = []
 
-    for Inclusive_snap in Inclusive_snapshots:
+    for test in range(len(xs)):
+    	Line_plots_shown.append([xs[test], ys[test], zs[test]])
+    	z_basis.append(z_basis_s[test])
+    	y_basis.append(y_basis_s[test])
+    	x_basis.append(x_basis_s[test])
 
-        index = (np.abs(ts - Inclusive_snap)).argmin()
-        Line_plots_shown.append([xs[index], ys[index], zs[index]])
-        z_basis.append(z_basis_s[index])
-        y_basis.append(y_basis_s[index])
-        x_basis.append(x_basis_s[index])
+
+    # for Inclusive_snap in Inclusive_snapshots:
+
+    #     index = (np.abs(ts - Inclusive_snap)).argmin()
+    #     Line_plots_shown.append([xs[index], ys[index], zs[index]])
+    #     z_basis.append(z_basis_s[index])
+    #     y_basis.append(y_basis_s[index])
+    #     x_basis.append(x_basis_s[index])
     
     x_basis = np.asarray(x_basis)
     y_basis = np.asarray(y_basis)
     z_basis = np.asarray(z_basis)
-    print x_basis
-    #print Line_plots_shown
+    # print x_basis
+    # #print Line_plots_shown
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     data = dbs_data
@@ -260,9 +279,12 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
 
     fig = plt.figure()
 
-    for i in range(numberOfSnaps+1):
+    for i in range(50):
+    #for i in range(numberOfSnaps+1):
 
-        All_snaps28 = snaps[idx+i]
+
+        All_snaps28 = snaps[28]
+        #All_snaps28 = snaps[idx+i]
         xyz_glas = []
         too_close_behind = []
         too_close_infornt = []
@@ -299,17 +321,27 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
                 print "these are the particles"
                 print particles
 
+                arr = perspective_transfomation(x_bas, y_bas, z_bas, cam_position, particles)
+                new_arr = arr.flatten()[:3]
 
-                
+                print arr
+                print new_arr
+
+                values_for_plot = np.r_[new_arr, xyz_glas[j][3]]
+                print "values to plot gjjgjgjgjgjgjgjgjgjggjgjjg"
+                print values_for_plot
 
 				#xyz_glas[j]
-                too_close_behind.append(perspective_transfomation(x_bas, y_bas, z_bas, cam_position, particles))
+                too_close_behind.append(values_for_plot)
 
-
+        print "too close bbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        print too_close_behind
 
 
 
         nparr1 = np.asarray(too_close_behind)
+        print "nparr1 nnnnnnnnnnnnnnnnnnnnnnn"
+        print nparr1
 
 
         labels = nparr1[:,3]
@@ -320,16 +352,16 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
         for g, txt in enumerate(labels):
             plt.annotate(txt, (nparr1[g][0],nparr1[g][1]))
 
-        sf_time = Inclusive_snapshots[i]
+        # sf_time = Inclusive_snapshots[i]
 
-        plt.title("Scale Factor: " + str(sf_time), loc='left', size=16)
-        plt.scatter(center_x,center_y,marker='o',s=200.0, c ='r')
-        #plt.ylim(center_y - viewing_distance, center_y + viewing_distance)
-        #plt.xlim(center_x - viewing_distance, center_x + viewing_distance)
+        # plt.title("Scale Factor: " + str(sf_time), loc='left', size=16)
+        #plt.scatter(center_x,center_y,marker='o',s=200.0, c ='r')
+        plt.ylim( - viewing_distance, viewing_distance)
+        plt.xlim( - viewing_distance, viewing_distance)
         plt.savefig(txt_name + str(i+15))
         plt.clf()
 
-story_board(dbs_data, viewing_distance, txt_name, "cam_test_9994243.txt")
+story_board(dbs_data, viewing_distance, txt_name, "gla200_0_straight.txt")
 
 
 
