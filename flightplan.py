@@ -6,7 +6,8 @@ import math
 from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.interpolate import UnivariateSpline as spline
+from scipy.interpolate import UnivariateSpline
+import timeit
 
 h = 0.6777
 SQL = """
@@ -61,7 +62,40 @@ gals[:,-1] = 1.0 / (1.0 + gals[:,-1])
 gals = gals[np.argsort(gals[:,3])]
 gals = gals[:,[3,0,1,2]]
 
+class path():
+    def __init__(self, no_of_frames, collection):
+        self.collection = collection
+        self.frames = np.arange(no_of_frames)
+        self.coord_spline = self.gen_coord_spline()
+        self.coords = self.coord_spline(self.frames)
+        self.look_at_spline = self.gen_look_at_spline()
+        self.look_at_dirs = self.look_at_spline(self.frames)
+        
+    
+    def gen_coord_spline(self):
+        coords = []
+        frames = []
+        for galaxy, path_function, frame_set, path_args in self.collection:
+            coords = coords + list(path_function(frame_set, path_args))
+            frames = frames + list(frame_set)
+        coords = np.asarray(coords)
+        frames = np.asarray(frames)
+        bundle = np.c_[frames, coords]
+        spl = spline3D(bundle)
+        return spl
 
+    def gen_look_at_spline(self):
+        frames = []
+        look_at_points = []
+        for t_gal, path_f, fs, path_args in self.collection:
+            frames = frames + list(fs)
+            look_at_dirs = t_gal[1:] - path_f(fs, path_args)
+            look_at_dirs = look_at_dirs / np.linalg.norm(look_at_dirs, axis=1)[:,None]
+            look_at_points = look_at_points + list(look_at_dirs)
+        frames = np.asarray(frames)
+        look_at_points = np.asarray(look_at_points)
+        return spline3D(np.c_[frames, look_at_points])
+        
 def circular_path(frame_nos, args):
     '''
     Given a frame number, returns x,y,z coords for the camera at that frame
@@ -84,20 +118,20 @@ def circular_path(frame_nos, args):
     z_coords = target_coords[2] + dir * (rad* np.sin(frame_nos * ang_int)) * z_factor
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
-def cam_vectors(frame_nos, target_coords, path_function, args):
-    look_at_dirs = target_coords[1:] - path_function(frame_nos, args)
-    look_at_dirs = look_at_dirs / np.linalg.norm(look_at_dirs, axis=1)[:,None]
-    derivs = np.zeros((len(frame_nos), 3))
-    d_frame = 0.01
-    for index in range(len(frame_nos)):
-        frame_no = frame_nos[index]
-        derivs[index] = path_function(frame_no + d_frame/2, args) - path_function(frame_no - d_frame/2, args)
-    #einsum computes the vector dots for each pair in the array
-    basis_1 = derivs - np.transpose(np.einsum("ij,ij->i", derivs, look_at_dirs) * np.transpose(look_at_dirs))
-    basis_1 = basis_1 / np.linalg.norm(basis_1, axis=1)[:,None]
-    basis_2 = np.cross(look_at_dirs, basis_1)
-    basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
-    return np.concatenate((basis_1, basis_2, look_at_dirs), axis=1)
+# def deriv_vectors(frame_nos, target_coords, path_function, args):
+#     look_at_dirs = target_coords[1:] - path_function(frame_nos, args)
+#     look_at_dirs = look_at_dirs / np.linalg.norm(look_at_dirs, axis=1)[:,None]
+#     derivs = np.zeros((len(frame_nos), 3))
+#     d_frame = 0.01
+#     for index in range(len(frame_nos)):
+#         frame_no = frame_nos[index]
+#         derivs[index] = path_function(frame_no + d_frame/2, args) - path_function(frame_no - d_frame/2, args)
+#     #einsum computes the vector dots for each pair in the array
+#     basis_1 = derivs - np.transpose(np.einsum("ij,ij->i", derivs, look_at_dirs) * np.transpose(look_at_dirs))
+#     basis_1 = basis_1 / np.linalg.norm(basis_1, axis=1)[:,None]
+#     basis_2 = np.cross(look_at_dirs, basis_1)
+#     basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
+#     return np.concatenate((basis_1, basis_2, look_at_dirs), axis=1)
 
 def straight_path(frame_nos, args):
     frame_nos = np.asarray([frame_nos])
@@ -112,52 +146,15 @@ def get_scalefactors(start_sf, end_sf, frames):
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
 
-def gen_file(no_of_frames, target_gal, path_function, path_args, file_name):
-    frame_array = np.arange(no_of_frames, dtype=float)
-    sf_array = np.asarray([1.0]*no_of_frames)
-    xs, ys, zs = np.transpose(path_function(frame_array, path_args))
-    v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frame_array, target_gal, path_function, path_args))
-    #v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = [1]*no_of_frames,[0]*no_of_frames,[0]*no_of_frames,[0]*no_of_frames,[1]*no_of_frames,[0]*no_of_frames,[0]*no_of_frames,[0]*no_of_frames,[1]*no_of_frames
-    linepoints = np.transpose(np.asarray([frame_array, sf_array, xs*h, ys*h, zs*h, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
-    np.savetxt(file_name, linepoints,fmt='%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f', header='RefL0100N1504',comments='#')
-    print "Saved to file: " + file_name
 
-def draw_graph(file_name, target_gal):
-    fs, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(np.loadtxt(file_name))
-    fig = plt.figure()
-    xs, ys, zs = xs/h, ys/h, zs/h
-    ax = fig.add_subplot(111, projection="3d")
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_zlabel("z")
-    # ax.plot(xs,ys,zs)
-    #ax.scatter(target_gal[0], target_gal[1], target_gal[2], marker="o", s=200.0, c="#682860")
-    # for galaxy in nearby_gal_datas:
-    #     ax.scatter(galaxy[0], galaxy[1], galaxy[2], marker="o", s=50.0)
-    ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
-    ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
-    ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
-    plt.show()
-
-def gen_spline(col):
-    coords = []
-    frames = []
-    for galaxy, path_function, frame_set, path_args in col:
-        coords = coords + list(path_function(frame_set, path_args))
-        frames = frames + list(frame_set)
-    coords = np.asarray(coords)
-    frames = np.asarray(frames)
-    bundle = np.c_[frames, coords]
-    spl = spline3D(bundle)
-    return spl
 
 class spline3D():
 
     def __init__(self, bundle):
         fks, xks, yks, zks = np.transpose(bundle)
-        self.x_spline = spline(fks, xks)
-        self.y_spline = spline(fks, yks)
-        self.z_spline = spline(fks, zks)
+        self.x_spline = UnivariateSpline(fks, xks, k=2)
+        self.y_spline = UnivariateSpline(fks, yks, k=2)
+        self.z_spline = UnivariateSpline(fks, zks, k=2)
 
     def __call__(self, fs, args=None):
         xs = self.x_spline(fs)
@@ -171,27 +168,14 @@ galaxy : [frames, path_function, path_args]
 collection = np.asarray([
     [gals[0], circular_path, np.arange(20, dtype=float), [gals[0,1:], 5.0, 1, 20, -1, 0.5]],
     #[gals[1], circular_path, np.arange(20, dtype=float) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5]],
-    [gals[2], circular_path, np.arange(20, dtype=float) + 80, [gals[2,1:], 5.0, 1, 20, 1, 2.5]],
-    [gals[3], circular_path, np.arange(20, dtype=float) + 120, [gals[3,1:], 5.0, 1, 20, 1, 0.75]],
-    [gals[4], circular_path, np.arange(20, dtype=float) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5]],
-    [gals[5], circular_path, np.arange(20, dtype=float) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5]]
+    [gals[2], circular_path, np.arange(20, dtype=float) + 40, [gals[2,1:], 5.0, 1, 20, 1, 2.5]],
+    #[gals[3], circular_path, np.arange(20, dtype=float) + 120, [gals[3,1:], 5.0, 1, 20, 1, 0.75]],
+    #[gals[4], circular_path, np.arange(20, dtype=float) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5]],
+    #[gals[5], circular_path, np.arange(20, dtype=float) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5]]
 ])
-frames = np.arange(220)
-spl = gen_spline(collection)
-xs, ys, zs = np.transpose(spl(frames))
-v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frames, gals[3], spl, None))
-# first_frames = np.arange(20, dtype=float)
-# sec_frames = np.arange(20, dtype=float) + 40
-# third_frames = np.arange(20, dtype=float) + 80
-# first_coords = circular_path(first_frames, [gals[0,1:], 5.0, 1, 20, -1])
-# sec_coords = circular_path(sec_frames, [gals[1,1:], 5.0, 1, 20, 1])
-# third_coords = circular_path(third_frames, [gals[2,1:], 5.0, 1, 20, 1])
-
-# fks = np.concatenate((first_frames, sec_frames, third_frames))
-# xks = np.concatenate((first_coords[:,0], sec_coords[:,0], third_coords[:,0]))
-# yks = np.concatenate((first_coords[:,1], sec_coords[:,1], third_coords[:,1]))
-# zks = np.concatenate((first_coords[:,2], sec_coords[:,2], third_coords[:,2]))
-
+everything = path(60, collection)
+xs, ys, zs = np.transpose(everything.coords)
+v3xs, v3ys, v3zs = np.transpose(everything.look_at_dirs)
 # frame_array = np.arange(100)
 # xs = spline(fks, xks, frame_array)
 # ys = spline(fks, yks, frame_array)
@@ -203,9 +187,9 @@ ax.set_ylabel("y")
 ax.set_zlabel("z")
 ax.plot(xs, ys, zs)
 ax.scatter(gals[0,1], gals[0,2], gals[0,3])
-ax.scatter(gals[2:,1], gals[2:,2], gals[2:,3])
-ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
-ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+ax.scatter(gals[2,1], gals[2,2], gals[2,3])
+# ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+# ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
 ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
 plt.show()
 
