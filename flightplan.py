@@ -6,7 +6,7 @@ import math
 from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.interpolate import spline
+from scipy.interpolate import UnivariateSpline as spline
 
 h = 0.6777
 SQL = """
@@ -49,7 +49,10 @@ interesting_ids = {
 
     13660659: 28,
     13793733: 28,
-    13722615: 28
+    13722615: 28,
+    20440704: 28,
+    17891603: 28,
+    14784533: 28
 
 }
 gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
@@ -74,11 +77,13 @@ def circular_path(frame_nos, args):
     orbits = args[2]
     frames = args[3]
     dir = args[4]
-    zoff = args[5]
+
+    z_factor = args[5]
     ang_int = orbits * 2*np.pi / frames
     x_coords = target_coords[0] + dir * rad * np.sin(frame_nos * ang_int)
     y_coords = target_coords[1] + dir * rad * np.cos(frame_nos * ang_int)
-    z_coords = target_coords[2] + dir * (rad* np.sin(frame_nos * ang_int)) * zoff
+    z_coords = target_coords[2] + dir * (rad* np.sin(frame_nos * ang_int)) * z_factor
+
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
 def cam_vectors(frame_nos, target_coords, path_function, args):
@@ -136,6 +141,7 @@ def draw_graph(file_name, target_gal):
     ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
     plt.show()
 
+<<<<<<< HEAD
 
 first_frames = np.arange(20, dtype=float)
 sec_frames = np.arange(20, dtype=float) + 40
@@ -153,16 +159,86 @@ frame_array = np.arange(100)
 xs = spline(fks, xks, frame_array)
 ys = spline(fks, yks, frame_array)
 zs = spline(fks, zks, frame_array)
+=======
+def gen_spline(col):
+    coords = []
+    frames = []
+    for galaxy, path_function, frame_set, path_args in col:
+        coords = coords + list(path_function(frame_set, path_args))
+        frames = frames + list(frame_set)
+    coords = np.asarray(coords)
+    frames = np.asarray(frames)
+    bundle = np.c_[frames, coords]
+    spl = spline3D(bundle)
+    return spl
+
+class spline3D():
+
+    def __init__(self, bundle):
+        fks, xks, yks, zks = np.transpose(bundle)
+        self.x_spline = spline(fks, xks)
+        self.y_spline = spline(fks, yks)
+        self.z_spline = spline(fks, zks)
+
+    def __call__(self, fs, args=None):
+        xs = self.x_spline(fs)
+        ys = self.y_spline(fs)
+        zs = self.z_spline(fs)
+        return np.transpose(np.asarray([xs, ys, zs]))
+    
+'''
+galaxy : [frames, path_function, path_args]
+'''
+collection = np.asarray([
+    [gals[0], circular_path, np.arange(20, dtype=float), [gals[0,1:], 5.0, 1, 20, -1, 0.5]],
+    #[gals[1], circular_path, np.arange(20, dtype=float) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5]],
+    [gals[2], circular_path, np.arange(20, dtype=float) + 80, [gals[2,1:], 5.0, 1, 20, 1, 2.5]],
+    [gals[3], circular_path, np.arange(20, dtype=float) + 120, [gals[3,1:], 5.0, 1, 20, 1, 0.75]],
+    [gals[4], circular_path, np.arange(20, dtype=float) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5]],
+    [gals[5], circular_path, np.arange(20, dtype=float) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5]]
+])
+frames = np.arange(220)
+spl = gen_spline(collection)
+xs, ys, zs = np.transpose(spl(frames))
+v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frames, gals[3], spl, None))
+# first_frames = np.arange(20, dtype=float)
+# sec_frames = np.arange(20, dtype=float) + 40
+# third_frames = np.arange(20, dtype=float) + 80
+# first_coords = circular_path(first_frames, [gals[0,1:], 5.0, 1, 20, -1])
+# sec_coords = circular_path(sec_frames, [gals[1,1:], 5.0, 1, 20, 1])
+# third_coords = circular_path(third_frames, [gals[2,1:], 5.0, 1, 20, 1])
+
+# fks = np.concatenate((first_frames, sec_frames, third_frames))
+# xks = np.concatenate((first_coords[:,0], sec_coords[:,0], third_coords[:,0]))
+# yks = np.concatenate((first_coords[:,1], sec_coords[:,1], third_coords[:,1]))
+# zks = np.concatenate((first_coords[:,2], sec_coords[:,2], third_coords[:,2]))
+
+# frame_array = np.arange(100)
+# xs = spline(fks, xks, frame_array)
+# ys = spline(fks, yks, frame_array)
+# zs = spline(fks, zks, frame_array)
+>>>>>>> f3c00e40785fb6eca0509615214f686e61dddcd0
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
 ax.plot(xs, ys, zs)
+<<<<<<< HEAD
 
 plt.show()
 
 
+=======
+ax.scatter(gals[0,1], gals[0,2], gals[0,3])
+ax.scatter(gals[2:,1], gals[2:,2], gals[2:,3])
+ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+plt.show()
+
+print gals
+>>>>>>> f3c00e40785fb6eca0509615214f686e61dddcd0
 # no_of_frames = 50
 # circle_args = [gals[0,1:], 5.0, 1.0, no_of_frames]
 # straight_args = [gals[0,1:] + [5,0,-5], gals[0,1:] + [5,0,5], no_of_frames]
