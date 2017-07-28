@@ -26,12 +26,12 @@ def eulerAnglesToRotationMatrix(theta):
 
 frame, ts, xs, ys, zs, b1,b2,b3,b4,b5,b6,b7,b8,b9 = np.loadtxt("cam_test_9994243.txt", unpack=True)
 thetas = np.asarray([[pi/4,pi/4,pi/4]] * len(xs))
-print thetas
+#print thetas
 
 
 
-z_basis = np.transpose(np.array([b7, b8, b9]))
-print z_basis
+z_basis = np.transpose(np.array([b7, b8, b9]))[0]
+#print z_basis
 y_basis = np.transpose(np.array([b4, b5, b6]))[0]
 x_basis = np.transpose(np.array([b1, b2, b3]))[0]
 cam_position = np.transpose(np.array([xs, ys, zs]))[0]
@@ -99,7 +99,7 @@ Rotation_Marticies = [eulerAnglesToRotationMatrix(theta) for theta in thetas]
 x, y, z = [70.], [70.], [10.]
 
 particles = np.transpose(np.array([x, y, z]))
-print particles
+#print particles
 
 def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles):
 	coords_none_trans = np.transpose(np.c_[particles, np.ones(len(particles))])
@@ -111,11 +111,14 @@ def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles
 		(0, 0, 0, 1)
 
 		]))
+	print "these are the coordiantes of the non tranformed "
+	print coords_none_trans
 	coords_in_cam = np.dot(M_world_camera, coords_none_trans)
 	return coords_in_cam 
 
 
 xyz = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
 
+print "transformed coordinates of the stufffffffffffffffffffffffffffffffffffffffff"
 print xyz
 
