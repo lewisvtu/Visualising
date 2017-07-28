@@ -159,11 +159,11 @@ class spline3D():
         self.y_spline = spline(fks, yks)
         self.z_spline = spline(fks, zks)
 
-    def __call__(self, fs):
+    def __call__(self, fs, args=None):
         xs = self.x_spline(fs)
         ys = self.y_spline(fs)
         zs = self.z_spline(fs)
-        return np.asarray([xs, ys, zs])
+        return np.transpose(np.asarray([xs, ys, zs]))
     
 '''
 galaxy : [frames, path_function, path_args]
@@ -178,7 +178,8 @@ collection = np.asarray([
 ])
 frames = np.arange(220)
 spl = gen_spline(collection)
-xs, ys, zs = spl(frames)
+xs, ys, zs = np.transpose(spl(frames))
+v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(frames, gals[3], spl, None))
 # first_frames = np.arange(20, dtype=float)
 # sec_frames = np.arange(20, dtype=float) + 40
 # third_frames = np.arange(20, dtype=float) + 80
@@ -203,7 +204,9 @@ ax.set_zlabel("z")
 ax.plot(xs, ys, zs)
 ax.scatter(gals[0,1], gals[0,2], gals[0,3])
 ax.scatter(gals[2:,1], gals[2:,2], gals[2:,3])
-
+ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
 plt.show()
 
 print gals
