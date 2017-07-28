@@ -94,7 +94,7 @@ class path():
             look_at_points = look_at_points + list(look_at_dirs)
         frames = np.asarray(frames)
         look_at_points = np.asarray(look_at_points)
-        return spline3D(np.c_[frames, look_at_points])
+        return spline3D(np.c_[frames, look_at_points], k=2)
         
 def circular_path(frame_nos, args):
     '''
@@ -150,11 +150,11 @@ def get_scalefactors(start_sf, end_sf, frames):
 
 class spline3D():
 
-    def __init__(self, bundle):
+    def __init__(self, bundle, k=3):
         fks, xks, yks, zks = np.transpose(bundle)
-        self.x_spline = UnivariateSpline(fks, xks, k=2)
-        self.y_spline = UnivariateSpline(fks, yks, k=2)
-        self.z_spline = UnivariateSpline(fks, zks, k=2)
+        self.x_spline = UnivariateSpline(fks, xks, k=k)
+        self.y_spline = UnivariateSpline(fks, yks, k=k)
+        self.z_spline = UnivariateSpline(fks, zks, k=k)
 
     def __call__(self, fs, args=None):
         xs = self.x_spline(fs)
