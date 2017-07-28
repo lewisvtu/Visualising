@@ -8,7 +8,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 SQL = """
-    SELECT
+    SELECT DISTINCT
         DES.GalaxyID,
         PROG.SnapNum,
         PROG.Mass,
@@ -23,19 +23,17 @@ SQL = """
         RefL0100N1504_Subhalo as DES,
         RefL0100N1504_Aperture as AP
     WHERE
-        DES.SnapNum = 28 and
+        PROG.SnapNum = 28 and
         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
         AP.GalaxyID = DES.GalaxyID and
-        DES.GroupNumber IN (200) and
+        DES.GroupNumber IN (200, 175, 150, 125, 100, 75) and
         DES.SubGroupNumber = 0
-    ORDER BY
-        PROG.GalaxyID,
-        PROG.SnapNum
+
 """
 
 # Grabs new data from db based on sql. If file name already exists, it loads that data instead
 
-filename = "2BigThings.p"
+filename = "6BigThings.p"
 
 raw_dbs = dbsPull(SQL, filename)
 print raw_dbs

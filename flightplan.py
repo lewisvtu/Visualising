@@ -6,7 +6,7 @@ import math
 from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.interpolate import spline
+from scipy.interpolate import UnivariateSpline as spline
 
 h = 0.6777
 SQL = """
@@ -49,7 +49,10 @@ interesting_ids = {
 
     13660659: 28,
     13793733: 28,
-    13722615: 28
+    13722615: 28,
+    20440704: 28,
+    17891603: 28,
+    14784533: 28
 
 }
 gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
@@ -74,10 +77,11 @@ def circular_path(frame_nos, args):
     orbits = args[2]
     frames = args[3]
     dir = args[4]
+    z_factor = args[5]
     ang_int = orbits * 2*np.pi / frames
     x_coords = target_coords[0] + dir * rad * np.sin(frame_nos * ang_int)
     y_coords = target_coords[1] + dir * rad * np.cos(frame_nos * ang_int)
-    z_coords = target_coords[2] + dir * (rad* np.sin(frame_nos * ang_int)) * 0.5
+    z_coords = target_coords[2] + dir * (rad* np.sin(frame_nos * ang_int)) * z_factor
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
 def cam_vectors(frame_nos, target_coords, path_function, args):
@@ -135,7 +139,46 @@ def draw_graph(file_name, target_gal):
     ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
     plt.show()
 
+def gen_spline(col):
+    coords = []
+    frames = []
+    for galaxy, path_function, frame_set, path_args in col:
+        coords = coords + list(path_function(frame_set, path_args))
+        frames = frames + list(frame_set)
+    coords = np.asarray(coords)
+    frames = np.asarray(frames)
+    bundle = np.c_[frames, coords]
+    spl = spline3D(bundle)
+    return spl
 
+class spline3D():
+
+    def __init__(self, bundle):
+        fks, xks, yks, zks = np.transpose(bundle)
+        self.x_spline = spline(fks, xks)
+        self.y_spline = spline(fks, yks)
+        self.z_spline = spline(fks, zks)
+
+    def __call__(self, fs):
+        xs = self.x_spline(fs)
+        ys = self.y_spline(fs)
+        zs = self.z_spline(fs)
+        return np.asarray([xs, ys, zs])
+    
+'''
+galaxy : [frames, path_function, path_args]
+'''
+collection = np.asarray([
+    [gals[0], circular_path, np.arange(20, dtype=float), [gals[0,1:], 5.0, 1, 20, -1, 0.5]],
+    #[gals[1], circular_path, np.arange(20, dtype=float) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5]],
+    [gals[2], circular_path, np.arange(20, dtype=float) + 80, [gals[2,1:], 5.0, 1, 20, 1, 2.5]],
+    [gals[3], circular_path, np.arange(20, dtype=float) + 120, [gals[3,1:], 5.0, 1, 20, 1, 0.75]],
+    [gals[4], circular_path, np.arange(20, dtype=float) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5]],
+    [gals[5], circular_path, np.arange(20, dtype=float) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5]]
+])
+frames = np.arange(220)
+spl = gen_spline(collection)
+xs, ys, zs = spl(frames)
 # first_frames = np.arange(20, dtype=float)
 # sec_frames = np.arange(20, dtype=float) + 40
 # third_frames = np.arange(20, dtype=float) + 80
@@ -152,16 +195,18 @@ def draw_graph(file_name, target_gal):
 # xs = spline(fks, xks, frame_array)
 # ys = spline(fks, yks, frame_array)
 # zs = spline(fks, zks, frame_array)
-# fig = plt.figure()
-# ax = fig.add_subplot(111, projection="3d")
-# ax.set_xlabel("x")
-# ax.set_ylabel("y")
-# ax.set_zlabel("z")
-# ax.plot(xs, ys, zs)
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+ax.plot(xs, ys, zs)
+ax.scatter(gals[0,1], gals[0,2], gals[0,3])
+ax.scatter(gals[2:,1], gals[2:,2], gals[2:,3])
 
-# plt.show()
+plt.show()
 
-
+print gals
 # no_of_frames = 50
 # circle_args = [gals[0,1:], 5.0, 1.0, no_of_frames]
 # straight_args = [gals[0,1:] + [5,0,-5], gals[0,1:] + [5,0,5], no_of_frames]
