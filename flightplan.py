@@ -145,6 +145,8 @@ def straight_path(frame_nos, args):
     return np.transpose(c_coords)
 
 def get_scalefactors(start_sf, end_sf, frames):
+    start_logsf = np.log10(start_sf)
+    end_logsf = np.log10(end_sf)
     array_log_sf = np.linspace(np.log10(start_logsf), np.log10(end_logsf), frames)
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
@@ -174,6 +176,7 @@ collection = np.asarray([
     #[gals[4], circular_path, np.arange(20, dtype=float) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5]],
     #[gals[5], circular_path, np.arange(20, dtype=float) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5]]
 ])
+
 everything = path(60, collection)
 xs, ys, zs = np.transpose(everything.coords)
 v3xs, v3ys, v3zs = np.transpose(everything.look_at_dirs)
@@ -192,4 +195,6 @@ ax.scatter(gals[2,1], gals[2,2], gals[2,3])
 #ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
 plt.show()
 
+
 print gals
+
