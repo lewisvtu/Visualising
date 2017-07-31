@@ -1,4 +1,5 @@
 #!/bin/env python2.7
+from __future__ import division
 import matplotlib.pyplot as plt
 import numpy as np
 import pickler.shelf as shelf
@@ -8,6 +9,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import UnivariateSpline
 import timeit
+
 
 h = 0.6777
 SQL = """
@@ -70,8 +72,10 @@ class path():
         self.coords = self.coord_spline(self.frames)
         self.look_at_spline = self.gen_look_at_spline()
         self.look_at_dirs = self.look_at_spline(self.frames)
-        
-    
+        self.look_at_dirs = self.look_at_dirs / np.linalg.norm(self.look_at_dirs, axis=1)[:,None]
+        self.tangent_dirs = self.gen_tangent_vectors()
+        self.final_dirs = self.gen_final_basis()
+
     def gen_coord_spline(self):
         coords = []
         frames = []
@@ -96,6 +100,25 @@ class path():
         look_at_points = np.asarray(look_at_points)
         return spline3D(np.c_[frames, look_at_points], k=2)
         
+    def gen_tangent_vectors(self):
+        frame_nos = self.frames
+        path_function = self.coord_spline
+        look_at_dirs = self.look_at_dirs
+        derivs = np.zeros((len(frame_nos), 3))
+        d_frame = 0.01
+        for index in range(len(frame_nos)):
+            frame_no = frame_nos[index]
+            derivs[index] = path_function(frame_no + d_frame/2) - path_function(frame_no - d_frame/2)
+        #einsum computes the vector dots for each pair in the array
+        basis_1 = derivs - np.transpose(np.einsum("ij,ij->i", derivs, look_at_dirs) * np.transpose(look_at_dirs))
+        basis_1 = basis_1 / np.linalg.norm(basis_1, axis=1)[:,None]
+        return basis_1
+
+    def gen_final_basis(self):
+        basis_2 = np.cross(self.look_at_dirs, self.tangent_dirs)
+        basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
+        return basis_2
+
 def circular_path(frame_nos, args):
     '''
     Given a frame number, returns x,y,z coords for the camera at that frame
@@ -137,6 +160,7 @@ def circular_path(frame_nos, args):
 
 
 def straight_path(frame_nos, args):
+
     frame_nos = np.asarray([frame_nos])
     frames = args[2]
     start_coords = args[0]
@@ -168,33 +192,36 @@ class spline3D():
 '''
 galaxy : [frames, path_function, path_args]
 '''
-collection = np.asarray([
-    [gals[0], circular_path, np.arange(20, dtype=float), [gals[0,1:], 5.0, 1, 20, -1, 0.5]],
-    #[gals[1], circular_path, np.arange(20, dtype=float) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5]],
-    [gals[2], circular_path, np.arange(20, dtype=float) + 40, [gals[2,1:], 5.0, 1, 20, 1, 2.5]],
-    #[gals[3], circular_path, np.arange(20, dtype=float) + 120, [gals[3,1:], 5.0, 1, 20, 1, 0.75]],
-    #[gals[4], circular_path, np.arange(20, dtype=float) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5]],
-    #[gals[5], circular_path, np.arange(20, dtype=float) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5]]
-])
+# collection = np.asarray([
+#     [gals[0], circular_path, np.arange(20, dtype=float), [gals[0,1:], 5.0, 1, 20, -1, 0.5]],
+#     #[gals[1], circular_path, np.arange(20, dtype=float) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5]],
+#     [gals[2], circular_path, np.arange(20, dtype=float) + 40, [gals[2,1:], 5.0, 1, 20, 1, 2.5]],
+#     #[gals[3], circular_path, np.arange(20, dtype=float) + 120, [gals[3,1:], 5.0, 1, 20, 1, 0.75]],
+#     #[gals[4], circular_path, np.arange(20, dtype=float) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5]],
+#     #[gals[5], circular_path, np.arange(20, dtype=float) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5]]
+# ])
 
-everything = path(60, collection)
+collection = np.asarray([
+    [gals[0], straight_path, np.arange(50), [gals[0,1:] + [3,3,-10], gals[0,1:] + [3,3, 10], 50.0]]
+])
+everything = path(50.0, collection)
 xs, ys, zs = np.transpose(everything.coords)
 v3xs, v3ys, v3zs = np.transpose(everything.look_at_dirs)
-
-fig = plt.figure()
-ax = fig.add_subplot(111, projection="3d")
-ax.set_xlabel("x")
-ax.set_ylabel("y")
-ax.set_zlabel("z")
-ax.plot(xs, ys, zs)
-
-ax.scatter(gals[0,1], gals[0,2], gals[0,3])
-ax.scatter(gals[2,1], gals[2,2], gals[2,3])
+v1xs, v1ys, v1zs = np.transpose(everything.tangent_dirs)
+v2xs, v2ys, v2zs = np.transpose(everything.final_dirs)
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection="3d")
+# ax.set_xlabel("x")
+# ax.set_ylabel("y")
+# ax.set_zlabel("z")
+# ax.plot(xs, ys, zs)
+# ax.scatter(gals[0,1], gals[0,2], gals[0,3])
+# #ax.scatter(gals[2,1], gals[2,2], gals[2,3])
 # ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
 # ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
-#ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
-plt.show()
+# ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+# plt.show()
 
-
-print gals
-
+setspace = np.transpose(np.asarray([np.arange(50), np.ones(50), xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
+print setspace
+np.savetxt("straight_galbig.txt", setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
