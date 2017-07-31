@@ -110,6 +110,8 @@ def straight_path(frame_nos, args):
     return np.transpose(c_coords)
 
 def get_scalefactors(start_sf, end_sf, frames):
+    start_logsf = np.log10(start_sf)
+    end_logsf = np.log10(end_sf)
     array_log_sf = np.linspace(np.log10(start_logsf), np.log10(end_logsf), frames)
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
@@ -141,25 +143,7 @@ def draw_graph(file_name, target_gal):
     ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
     plt.show()
 
-<<<<<<< HEAD
 
-first_frames = np.arange(20, dtype=float)
-sec_frames = np.arange(20, dtype=float) + 40
-third_frames = np.arange(20, dtype=float) + 80
-first_coords = circular_path(first_frames, [gals[0,1:], 5.0, 1, 20, -1, 1])
-sec_coords = circular_path(sec_frames, [gals[1,1:], 5.0, 1, 20, 1, 0.5])
-third_coords = circular_path(third_frames, [gals[2,1:], 5.0, 1, 20, 1, -1])
-
-fks = np.concatenate((first_frames, sec_frames, third_frames))
-xks = np.concatenate((first_coords[:,0], sec_coords[:,0], third_coords[:,0]))
-yks = np.concatenate((first_coords[:,1], sec_coords[:,1], third_coords[:,1]))
-zks = np.concatenate((first_coords[:,2], sec_coords[:,2], third_coords[:,2]))
-
-frame_array = np.arange(100)
-xs = spline(fks, xks, frame_array)
-ys = spline(fks, yks, frame_array)
-zs = spline(fks, zks, frame_array)
-=======
 def gen_spline(col):
     coords = []
     frames = []
@@ -217,19 +201,14 @@ v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.transpose(cam_vectors(
 # xs = spline(fks, xks, frame_array)
 # ys = spline(fks, yks, frame_array)
 # zs = spline(fks, zks, frame_array)
->>>>>>> f3c00e40785fb6eca0509615214f686e61dddcd0
+
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
 ax.plot(xs, ys, zs)
-<<<<<<< HEAD
 
-plt.show()
-
-
-=======
 ax.scatter(gals[0,1], gals[0,2], gals[0,3])
 ax.scatter(gals[2:,1], gals[2:,2], gals[2:,3])
 ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
@@ -237,8 +216,9 @@ ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
 ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
 plt.show()
 
-print gals
->>>>>>> f3c00e40785fb6eca0509615214f686e61dddcd0
+linepoints = np.transpose(np.asarray([frames, np.ones(220), xs*h, ys*h, zs*h, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
+np.savetxt("splines.txt" , linepoints,fmt='%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f', header='RefL0100N1504',comments='#')
+
 # no_of_frames = 50
 # circle_args = [gals[0,1:], 5.0, 1.0, no_of_frames]
 # straight_args = [gals[0,1:] + [5,0,-5], gals[0,1:] + [5,0,5], no_of_frames]
