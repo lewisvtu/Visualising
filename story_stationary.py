@@ -35,6 +35,7 @@ SQL = """
 """
 
 viewing_distance = 5.0
+
 txt_name = "camPerspect_2_31_07_17_"
 filename = "FollowProgs19.p"
 raw_dbs = dbsPull(SQL, filename)
@@ -45,36 +46,14 @@ dbs_data = shelf.pull("followup19")
 
 def story_board(dbs_data, viewing_distance, txt_name, path_file):
 
-    #the epansion factore that corresponds to the snapshot number. in order form snapshot 0 to 28,
-    #ie z=20 to z=0
-    Expansion_F_snaps = [0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.17,
-                         0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
-                         0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
-                         0.91, 1.00]
-
     path_of_camera = np.loadtxt(path_file)
     frame, ts, xs, ys, zs, b1,b2,b3,b4,b5,b6,b7,b8,b9 = np.loadtxt(path_file, unpack=True)
-
     z_basis_s = np.transpose(np.asarray([b7, b8, b9]))
     y_basis_s = np.transpose(np.asarray([b4, b5, b6]))
     x_basis_s = np.transpose(np.asarray([b1, b2, b3]))
     #cam_position_s = np.transpose(np.array([xs, ys, zs]))
-    print x_basis_s
+    #print x_basis_s
 
-
-
-
-
-    #to find the snapshot which the path starts at from the scale factor, ie the index 
-    first_sf = path_of_camera[0,1]
-    last_sf = path_of_camera[-1,1]
-    idx = (np.abs(Expansion_F_snaps - first_sf)).argmin()
-    idxL = (np.abs(Expansion_F_snaps - last_sf)).argmin()
-
-    numberOfSnaps = abs(idx - idxL)
-
-    #to find the scale factor at the snapshot you are at and to find the nearest x,y,z from the flight path
-    Inclusive_snapshots = Expansion_F_snaps[idx:idxL+1]
     Line_plots_shown = []
     z_basis = []
     y_basis = []
@@ -86,33 +65,13 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
     	y_basis.append(y_basis_s[test])
     	x_basis.append(x_basis_s[test])
 
+    #print Line_plots_shown
 
-    # for Inclusive_snap in Inclusive_snapshots:
-
-    #     index = (np.abs(ts - Inclusive_snap)).argmin()
-    #     Line_plots_shown.append([xs[index], ys[index], zs[index]])
-    #     z_basis.append(z_basis_s[index])
-    #     y_basis.append(y_basis_s[index])
-    #     x_basis.append(x_basis_s[index])
-    
     x_basis = np.asarray(x_basis)
     y_basis = np.asarray(y_basis)
     z_basis = np.asarray(z_basis)
-    # print x_basis
+    #print x_basis, y_basis, z_basis
     # #print Line_plots_shown
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     data = dbs_data
 
@@ -139,15 +98,13 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
 
     fig = plt.figure()
 
-    for i in range(50):
+    for i in range(len(frame)):
     #for i in range(numberOfSnaps+1):
 
 
         All_snaps28 = snaps[28]
-        #All_snaps28 = snaps[idx+i]
         xyz_glas = []
         too_close_behind = []
-        too_close_infornt = []
 
 
         for k in range(len(All_snaps28)):
@@ -159,15 +116,17 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
         center_z = Line_plots_shown[i][2]
 
         cam_position = np.transpose(np.array([center_x, center_y, center_z]))
+        #print "cam pos ccccccccccccccccccccccccccccccc"
         #print cam_position
 
 
         x_bas = x_basis[i]
-        print "this is the x basis xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        print x_bas
+        #print "this is the x basis xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        
         y_bas = y_basis[i]
         z_bas = z_basis[i]
-
+        #print "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        #print x_bas, y_bas, z_bas
 
 
 
@@ -178,30 +137,38 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
                 and abs((xyz_glas[j][2] - center_z)) <=viewing_distance):
                 
                 particles = np.transpose( np.array([[xyz_glas[j][0]], [xyz_glas[j][1]], [xyz_glas[j][2]]]) )
-                print "these are the particles"
-                print particles
+                #print "these are the particles"
+                #print particles
 
                 arr = perspective_transfomation(x_bas, y_bas, z_bas, cam_position, particles)
                 new_arr = arr.flatten()[:3]
 
-                print arr
-                print new_arr
+
+                #print arr
+                #print new_arr
 
                 values_for_plot = np.r_[new_arr, xyz_glas[j][3]]
-                print "values to plot gjjgjgjgjgjgjgjgjgjggjgjjg"
-                print values_for_plot
+
+                #print "values to plot gjjgjgjgjgjgjgjgjgjggjgjjg"
+                #print values_for_plot
 
 				#xyz_glas[j]
                 too_close_behind.append(values_for_plot)
 
-        print "too close bbbbbbbbbbbbbbbbbbbbbbbbbbb"
-        print too_close_behind
+
+
+       # print "too close bbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        #print too_close_behind
 
 
 
         nparr1 = np.asarray(too_close_behind)
-        print "nparr1 nnnnnnnnnnnnnnnnnnnnnnn"
-        print nparr1
+
+        for nn in nparr1:
+            if nn[3] == 9715325.0:
+                print nn
+        #print "nparr1 nnnnnnnnnnnnnnnnnnnnnnn"
+        #print nparr1
 
 
         labels = nparr1[:,3]

@@ -99,9 +99,13 @@ Rotation_Marticies = [eulerAnglesToRotationMatrix(theta) for theta in thetas]
 x, y, z = [70.], [70.], [10.]
 
 particles = np.transpose(np.array([x, y, z]))
-#print particles
-
+#print particle4.
 def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles):
+
+	fov = 45.
+	region = [5., 5., 5.]
+
+
 	coords_none_trans = np.transpose(np.c_[particles, np.ones(len(particles))])
 	M_world_camera = np.linalg.inv(np.array([
 
@@ -111,10 +115,39 @@ def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles
 		(0, 0, 0, 1)
 
 		]))
-	print "these are the coordiantes of the non tranformed "
-	print coords_none_trans
-	coords_in_cam = np.dot(M_world_camera, coords_none_trans)
-	return coords_in_cam 
+
+
+
+	coords_in_cam = np.matmul(M_world_camera, coords_none_trans)
+	# Projection matrix.
+	d               = 1./(np.tan(fov/2.))
+	aspect_ratio    = np.true_divide(region[0], region[1])
+	near            = region[2] * 0.0001
+	far             = region[2] * 1.0000
+
+	M_projection = np.array([
+		(d*(1./aspect_ratio),0,0,0),
+		(0,d,0,0),
+		(0,0,(-near-far)/(near-far), (2*near*far)/(near-far)),
+		(0,0,1,0)
+	])
+
+
+
+	perpec_in_cam = np.matmul(M_projection, coords_in_cam)
+	coords = perpec_in_cam
+	coords      = coords.T
+	coords[:,0] = coords[:,0]/coords[:,3]
+	coords[:,1] = coords[:,1]/coords[:,3]
+	coords[:,2] = coords[:,2]/coords[:,3]
+	coords[:,3] = coords[:,3]/coords[:,3]
+
+	print "perpec in cammmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+	#print perpec_in_cam
+
+	return coords
+	#return perpec_in_cam
+
 
 
 xyz = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
