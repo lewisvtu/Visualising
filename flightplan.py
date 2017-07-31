@@ -135,6 +135,7 @@ def circular_path(frame_nos, args):
 #     basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
 #     return np.concatenate((basis_1, basis_2, look_at_dirs), axis=1)
 
+
 def straight_path(frame_nos, args):
     frame_nos = np.asarray([frame_nos])
     frames = args[2]
@@ -188,7 +189,7 @@ ax.scatter(gals[0,1], gals[0,2], gals[0,3])
 ax.scatter(gals[2,1], gals[2,2], gals[2,3])
 # ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
 # ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
-ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+#ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
 plt.show()
 
 print gals
