@@ -12,62 +12,62 @@ import timeit
 
 
 h = 0.6777
-# SQL = """
-#     SELECT
-#         DES.GalaxyID,
-#         PROG.SnapNum,
-#         PROG.Mass,
-#         PROG.CentreOfPotential_x,
-#         PROG.CentreOfPotential_y,
-#         PROG.CentreOfPotential_z,
-#         PROG.Redshift
-#     FROM
-#         RefL0100N1504_Subhalo as PROG with(forceseek),
-#         RefL0100N1504_Subhalo as DES,
-#         RefL0100N1504_Aperture as AP
-#     WHERE
-#         DES.SnapNum = 28 and
-#         DES.MassType_Star > 1.0e9 and
-#         DES.MassType_DM > 5.0e10 and
-#         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
-#         AP.ApertureSize = 30 and
-#         AP.GalaxyID = DES.GalaxyID and
-#         AP.Mass_Star > 1.0e9
-#     ORDER BY
-#         PROG.GalaxyID,
-#         PROG.SnapNum
-# """
+SQL = """
+    SELECT
+        DES.GalaxyID,
+        PROG.SnapNum,
+        PROG.Mass,
+        PROG.CentreOfPotential_x,
+        PROG.CentreOfPotential_y,
+        PROG.CentreOfPotential_z,
+        PROG.Redshift
+    FROM
+        RefL0100N1504_Subhalo as PROG with(forceseek),
+        RefL0100N1504_Subhalo as DES,
+        RefL0100N1504_Aperture as AP
+    WHERE
+        DES.SnapNum = 28 and
+        DES.MassType_Star > 1.0e9 and
+        DES.MassType_DM > 5.0e10 and
+        PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
+        AP.ApertureSize = 30 and
+        AP.GalaxyID = DES.GalaxyID and
+        AP.Mass_Star > 1.0e9
+    ORDER BY
+        PROG.GalaxyID,
+        PROG.SnapNum
+"""
 
-# # Grabs new data from db based on sql. If file name already exists, it loads that data instead
+# Grabs new data from db based on sql. If file name already exists, it loads that data instead
 
-# filename = "FollowProgs2.p"
+filename = "FollowProgs2.p"
 
-# raw_dbs = dbsPull(SQL, filename)
+raw_dbs = dbsPull(SQL, filename)
 
-# shelf.push(raw_dbs, "followup2")
+shelf.push(raw_dbs, "followup2")
 
-# dbs_data = shelf.pull("followup2")
+dbs_data = shelf.pull("followup2")
 
-# interesting_ids = {
+interesting_ids = {
 
-#     13660659: 28,
-#     13793733: 28,
-#     13722615: 28,
-#     20440704: 28,
-#     17891603: 28,
-#     14784533: 28
+    13660659: 28,
+    13793733: 28,
+    13722615: 28,
+    20440704: 28,
+    17891603: 28,
+    14784533: 28
 
-# }
-# gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
-# # Makes all galaxies have the form [sf,x,y,z] sorted by sf
-# gals[:,-1] = 1.0 / (1.0 + gals[:,-1])
-# gals = gals[np.argsort(gals[:,3])]
-# gals = gals[:,[3,0,1,2]]
+}
+gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
+# Makes all galaxies have the form [sf,x,y,z] sorted by sf
+gals[:,-1] = 1.0 / (1.0 + gals[:,-1])
+gals = gals[np.argsort(gals[:,3])]
+gals = gals[:,[3,0,1,2]]
 
 class path():
     def __init__(self, no_of_frames, collection):
         self.collection = collection
-        self.frames = np.arange(no_of_frames)
+        self.frames = np.arange(no_of_frames, dtype=int)
         self.coord_spline = self.gen_coord_spline()
         self.coords = self.coord_spline(self.frames)
         self.look_at_dirs = self.get_look_ats()
@@ -89,16 +89,19 @@ class path():
 
 
     def get_look_ats(self):
-        frames = []
-        look_at_points = []
-        for t_gal, path_f, fs, path_args in self.collection:
-            frames = frames + list(fs)
-            look_at_dirs = t_gal[1:] - path_f(fs, path_args)
-            look_at_dirs = look_at_dirs / np.linalg.norm(look_at_dirs, axis=1)[:,None]
-            look_at_points = look_at_points + list(look_at_dirs)
-        frames = np.asarray(frames)
-        look_at_points = np.asarray(look_at_points)
-        return spline3D(np.c_[frames, look_at_points], k=2)
+        look_at_dirs = np.zeros((len(self.frames),3))
+        calced_frames = []
+        for galaxy, path_function, frame_set, path_args in self.collection:
+            target_coords = np.asarray(galaxy[1:])
+            path_coords = self.coord_spline(frame_set)
+            #print target_coords, path_coords
+            look_vectors = target_coords - path_coords
+            look_at_dirs[frame_set] = look_vectors / np.linalg.norm(look_vectors, axis=1)[:,None]
+            calced_frames = calced_frames + list(frame_set)
+        look_at_dirs = np.c_[self.frames, look_at_dirs]
+        cutoffs = [snap[0] for snap in look_at_dirs if np.linalg.norm(snap[1:4]) == 0.0]
+        print cutoffs
+        return look_at_dirs[:,1:]
         
     def gen_tangent_vectors(self):
         frame_nos = self.frames
@@ -203,33 +206,33 @@ class spline3D():
 '''
 galaxy : [frames, path_function, path_args]
 '''
-# collection = np.asarray([
-#     [gals[0], circular_path, np.arange(20, dtype=float), [gals[0,1:], 5.0, 1, 20, -1, 0.5]],
-#     #[gals[1], circular_path, np.arange(20, dtype=float) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5]],
-#     [gals[2], circular_path, np.arange(20, dtype=float) + 40, [gals[2,1:], 5.0, 1, 20, 1, 2.5]],
-#     [gals[3], circular_path, np.arange(20, dtype=float) + 120, [gals[3,1:], 5.0, 1, 20, 1, 0.75]],
-#     #[gals[4], circular_path, np.arange(20, dtype=float) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5]],
-#     #[gals[5], circular_path, np.arange(20, dtype=float) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5]]
-# ])
-# interested = [0,2,3]
+collection = np.asarray([
+    [gals[0], circular_path, np.arange(20, dtype=int), [gals[0,1:], 5.0, 1, 20, -1, 0.5]],
+    #[gals[1], circular_path, np.arange(20, dtype=int) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5]],
+    [gals[2], circular_path, np.arange(20, dtype=int) + 40, [gals[2,1:], 5.0, 1, 20, 1, 2.5]],
+    [gals[3], circular_path, np.arange(20, dtype=int) + 120, [gals[3,1:], 5.0, 1, 20, 1, 0.75]],
+    #[gals[4], circular_path, np.arange(20, dtype=int) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5]],
+    #[gals[5], circular_path, np.arange(20, dtype=int) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5]]
+])
+interested = [0,2,3]
 # # collection = np.asarray([
 # #     [gals[0], straight_path, np.arange(50), [gals[0,1:] + [3,3,-10], gals[0,1:] + [3,3, 10], 50.0]]
 # # ])
-# everything = path(140, collection)
-# frames = everything.frames
-# sfs = get_scalefactors(1,1,len(frames))
-# xs, ys, zs = np.transpose(everything.coords)
-# v3xs, v3ys, v3zs = np.transpose(everything.look_at_dirs)
-# v1xs, v1ys, v1zs = np.transpose(everything.tangent_dirs)
-# v2xs, v2ys, v2zs = np.transpose(everything.final_dirs)
-# fig = plt.figure()
-# ax = fig.add_subplot(111, projection="3d")
-# ax.set_xlabel("x")
-# ax.set_ylabel("y")
-# ax.set_zlabel("z")
-# ax.plot(xs, ys, zs)
-# for ele in interested:
-#     ax.scatter(gals[ele,1], gals[ele,2], gals[ele,3])
+everything = path(140, collection)
+frames = everything.frames
+sfs = get_scalefactors(1,1,len(frames))
+xs, ys, zs = np.transpose(everything.coords)
+v3xs, v3ys, v3zs = np.transpose(everything.look_at_dirs)
+v1xs, v1ys, v1zs = np.transpose(everything.tangent_dirs)
+v2xs, v2ys, v2zs = np.transpose(everything.final_dirs)
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+ax.plot(xs, ys, zs)
+for ele in interested:
+    ax.scatter(gals[ele,1], gals[ele,2], gals[ele,3])
 
 # ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
 # ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
@@ -237,6 +240,6 @@ galaxy : [frames, path_function, path_args]
 # plt.show()
 
 
-# setspace = np.transpose(np.asarray([frames, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
+# setspace = np.transpose(np.asarray([frames, sfs, xs/h, ys/h, zs/h, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
 # #print setspace
 # np.savetxt("straight_galbig.txt", setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
