@@ -70,9 +70,9 @@ class path():
         self.frames = np.arange(no_of_frames, dtype=int)
         self.coord_spline = self.gen_coord_spline()
         self.coords = self.coord_spline(self.frames)
-        self.look_at_dirs = self.get_look_ats()
-        self.tangent_dirs = self.gen_tangent_vectors()
-        self.final_dirs = self.gen_final_basis()
+        self.basis_z = self.get_to_targets()
+        self.basis_x = self.orthonormalise(self.gen_tangent_vectors(), self.basis_z)
+        self.basis_y = self.cross_basis(self.basis_z, self.basis_x)
 
     def gen_coord_spline(self):
         coords = []
@@ -88,7 +88,7 @@ class path():
 
 
 
-    def get_look_ats(self):
+    def get_to_targets(self):
         look_at_dirs = np.zeros((len(self.frames),3))
         calced_frames = []
         for galaxy, path_function, frame_set, path_args in self.collection:
@@ -100,27 +100,30 @@ class path():
             calced_frames = calced_frames + list(frame_set)
         look_at_dirs = np.c_[self.frames, look_at_dirs]
         cutoffs = [snap[0] for snap in look_at_dirs if np.linalg.norm(snap[1:4]) == 0.0]
-        print cutoffs
         return look_at_dirs[:,1:]
         
     def gen_tangent_vectors(self):
         frame_nos = self.frames
         path_function = self.coord_spline
-        look_at_dirs = self.look_at_dirs
         derivs = np.zeros((len(frame_nos), 3))
         d_frame = 0.01
         for index in range(len(frame_nos)):
             frame_no = frame_nos[index]
             derivs[index] = path_function(frame_no + d_frame/2) - path_function(frame_no - d_frame/2)
-        #einsum computes the vector dots for each pair in the array
-        basis_1 = derivs - np.transpose(np.einsum("ij,ij->i", derivs, look_at_dirs) * np.transpose(look_at_dirs))
-        basis_1 = basis_1 / np.linalg.norm(basis_1, axis=1)[:,None]
-        return basis_1
+        derivs = derivs / np.linalg.norm(derivs, axis=1)[:,None]
+        return derivs
 
-    def gen_final_basis(self):
-        basis_2 = np.cross(self.look_at_dirs, self.tangent_dirs)
+    def orthonormalise(self, new_vects, basis_1):
+        #einsum computes the vector dots for each pair in the array
+        basis_2 = new_vects - np.transpose(np.einsum("ij,ij->i", new_vects, basis_1) * np.transpose(basis_1))
         basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
         return basis_2
+
+    def cross_basis(self, basis_1, basis_2):
+        basis_3 = np.cross(basis_1, basis_2)
+        basis_3 = basis_3 / np.linalg.norm(basis_3, axis=1)[:,None]
+        return basis_3
+
 
 def circular_path(frame_nos, args):
     '''
@@ -215,16 +218,16 @@ collection = np.asarray([
     #[gals[5], circular_path, np.arange(20, dtype=int) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5]]
 ])
 interested = [0,2,3]
-# # collection = np.asarray([
-# #     [gals[0], straight_path, np.arange(50), [gals[0,1:] + [3,3,-10], gals[0,1:] + [3,3, 10], 50.0]]
-# # ])
+# collection = np.asarray([
+#     [gals[0], straight_path, np.arange(50), [gals[0,1:] + [3,3,-10], gals[0,1:] + [3,3, 10], 50.0]]
+# ])
 everything = path(140, collection)
 frames = everything.frames
 sfs = get_scalefactors(1,1,len(frames))
 xs, ys, zs = np.transpose(everything.coords)
-v3xs, v3ys, v3zs = np.transpose(everything.look_at_dirs)
-v1xs, v1ys, v1zs = np.transpose(everything.tangent_dirs)
-v2xs, v2ys, v2zs = np.transpose(everything.final_dirs)
+v3xs, v3ys, v3zs = np.transpose(everything.basis_z)
+v1xs, v1ys, v1zs = np.transpose(everything.basis_x)
+v2xs, v2ys, v2zs = np.transpose(everything.basis_y)
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
 ax.set_xlabel("x")
@@ -234,10 +237,10 @@ ax.plot(xs, ys, zs)
 for ele in interested:
     ax.scatter(gals[ele,1], gals[ele,2], gals[ele,3])
 
-# ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
-# ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
-# ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
-# plt.show()
+ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+plt.show()
 
 
 # setspace = np.transpose(np.asarray([frames, sfs, xs/h, ys/h, zs/h, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
