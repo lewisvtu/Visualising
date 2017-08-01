@@ -23,20 +23,20 @@ SQL = """
         RefL0100N1504_Aperture as AP
     WHERE
         DES.SnapNum = 28 and
-        DES.MassType_Star > 1.0e9 and
+        DES.MassType_Star > 5.0e9 and
         DES.MassType_DM > 5.0e10 and
         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
         AP.ApertureSize = 30 and
         AP.GalaxyID = DES.GalaxyID and
-        AP.Mass_Star > 1.0e9
+        AP.Mass_Star > 5.0e9
     ORDER BY
         PROG.GalaxyID,
         PROG.SnapNum
 """
 
-viewing_distance = 5.0
-
-txt_name = "camPerspect_2_31_07_17_"
+viewing_distance = 10.0
+h = 0.6777
+txt_name = "line_smallerm_mass_"
 filename = "FollowProgs19.p"
 raw_dbs = dbsPull(SQL, filename)
 shelf.push(raw_dbs, "followup19")
@@ -53,7 +53,9 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
     x_basis_s = np.transpose(np.asarray([b1, b2, b3]))
     #cam_position_s = np.transpose(np.array([xs, ys, zs]))
     #print x_basis_s
-
+    xs =xs/h
+    ys =ys/h
+    zs =zs/h
     Line_plots_shown = []
     z_basis = []
     y_basis = []
@@ -74,6 +76,7 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
     # #print Line_plots_shown
 
     data = dbs_data
+    #print data
 
     #creates a dictionary of all the galaxies and all there snapshots 
     gals = {}
@@ -139,6 +142,8 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
                 particles = np.transpose( np.array([[xyz_glas[j][0]], [xyz_glas[j][1]], [xyz_glas[j][2]]]) )
                 #print "these are the particles"
                 #print particles
+                #print xyz_glas[j][2]-center_z , xyz_glas[j][3] 
+
 
                 arr = perspective_transfomation(x_bas, y_bas, z_bas, cam_position, particles)
                 new_arr = arr.flatten()[:3]
@@ -148,6 +153,8 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
                 #print new_arr
 
                 values_for_plot = np.r_[new_arr, xyz_glas[j][3]]
+                #print "these are the values for plot ppppppppppppppp"
+                #print values_for_plot
 
                 #print "values to plot gjjgjgjgjgjgjgjgjgjggjgjjg"
                 #print values_for_plot
@@ -160,32 +167,40 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
        # print "too close bbbbbbbbbbbbbbbbbbbbbbbbbbb"
         #print too_close_behind
 
+        positive_plot = []
+        for galaxy in too_close_behind:
+            #print galaxy
+            if galaxy[2] >= 0.0:
+                positive_plot.append(galaxy)
 
+            else:
+                #print "this is negative vvvvvvvvvvvvvvvvvvvvv"
+                print "neg"
+        #print positive_plot
 
-        nparr1 = np.asarray(too_close_behind)
+        nparr1 = np.asarray(positive_plot)
 
-        for nn in nparr1:
-            if nn[3] == 9715325.0:
-                print nn
-        #print "nparr1 nnnnnnnnnnnnnnnnnnnnnnn"
-        #print nparr1
+        print "nparr1 nnnnnnnnnnnnnnnnnnnnnnn"
+        print nparr1
 
+        if len(nparr1) >= 1.0:
+            labels = nparr1[:,3]
+            perspec_size = 10000 / nparr1[:,2]**2
+            print perspec_size
+            #print nparr1
+            #nparrii = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
+            plt.scatter(nparr1[:,0],nparr1[:,1],marker='o', s=perspec_size, c='b') 
+            
+            for g, txt in enumerate(labels):
+                plt.annotate(txt, (nparr1[g][0],nparr1[g][1]))
 
-        labels = nparr1[:,3]
-        #print nparr1
-        #nparrii = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
-        plt.scatter(nparr1[:,0],nparr1[:,1],marker='x', c='b', s=50.) 
-        
-        for g, txt in enumerate(labels):
-            plt.annotate(txt, (nparr1[g][0],nparr1[g][1]))
+            # sf_time = Inclusive_snapshots[i]
 
-        # sf_time = Inclusive_snapshots[i]
-
-        # plt.title("Scale Factor: " + str(sf_time), loc='left', size=16)
-        #plt.scatter(center_x,center_y,marker='o',s=200.0, c ='r')
-        plt.ylim( - viewing_distance, viewing_distance)
-        plt.xlim( - viewing_distance, viewing_distance)
-        plt.savefig(txt_name + str(i+15))
-        plt.clf()
+            # plt.title("Scale Factor: " + str(sf_time), loc='left', size=16)
+            #plt.scatter(center_x,center_y,marker='o',s=200.0, c ='r')
+            plt.ylim( - viewing_distance, viewing_distance)
+            plt.xlim( - viewing_distance, viewing_distance)
+            plt.savefig(txt_name + str(i+15))
+            plt.clf()
 
 story_board(dbs_data, viewing_distance, txt_name, "gla200_0_straight.txt")

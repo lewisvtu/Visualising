@@ -102,7 +102,7 @@ particles = np.transpose(np.array([x, y, z]))
 #print particle4.
 def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles):
 
-	fov = 45.
+	fov = np.pi / 4
 	region = [5., 5., 5.]
 
 
@@ -119,6 +119,7 @@ def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles
 
 
 	coords_in_cam = np.matmul(M_world_camera, coords_none_trans)
+	print coords_in_cam
 	# Projection matrix.
 	d               = 1./(np.tan(fov/2.))
 	aspect_ratio    = np.true_divide(region[0], region[1])
@@ -139,12 +140,13 @@ def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles
 	coords      = coords.T
 	coords[:,0] = coords[:,0]/coords[:,3]
 	coords[:,1] = coords[:,1]/coords[:,3]
-	coords[:,2] = coords[:,2]/coords[:,3]
+	coords[:,2] = coords_in_cam.T[:,2]
 	coords[:,3] = coords[:,3]/coords[:,3]
 
-	print "perpec in cammmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+	#print "perpec in cammmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
 	#print perpec_in_cam
-
+	print "coordssssssssssssssssssssssssssssss"
+	print coords
 	return coords
 	#return perpec_in_cam
 
