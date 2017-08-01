@@ -99,7 +99,8 @@ class path():
             look_at_dirs[frame_set] = look_vectors / np.linalg.norm(look_vectors, axis=1)[:,None]
             calced_frames = calced_frames + list(frame_set)
         look_at_dirs = np.c_[self.frames, look_at_dirs]
-        cutoffs = [snap[0] for snap in look_at_dirs if np.linalg.norm(snap[1:4]) == 0.0]
+        interp_frames = [frame[0] for frame in look_at_dirs if np.linalg.norm(frame[1:]) == 0]
+        print interp_frames
         return look_at_dirs[:,1:]
         
     def gen_tangent_vectors(self):
@@ -131,7 +132,7 @@ def circular_path(frame_nos, args):
 
     args:
         frame_nos: the frame number/ array of frame numbers to compute the positions of
-        args: list of form []
+        args: list of form [targ_gal, radius, orbits, #frames, direction, z_scaling]
     '''
     decay = 0.5
     frame_nos = np.asarray(frame_nos)
@@ -173,6 +174,9 @@ def get_scalefactors(start_sf, end_sf, frames):
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
 
+def interpolate_vectors(start_vector, end_vector, zero_frames):
+    frame_range = len(zero_frames)
+    
 
 class spline3D():
     '''
@@ -210,7 +214,7 @@ class spline3D():
 galaxy : [frames, path_function, path_args]
 '''
 collection = np.asarray([
-    [gals[0], circular_path, np.arange(20, dtype=int), [gals[0,1:], 5.0, 1, 20, -1, 0.5]],
+    [gals[0], circular_path, np.arange(20, dtype=int), [gals[0,1:], 5.0, 1, 20, 1, 0.5]],
     #[gals[1], circular_path, np.arange(20, dtype=int) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5]],
     [gals[2], circular_path, np.arange(20, dtype=int) + 40, [gals[2,1:], 5.0, 1, 20, 1, 2.5]],
     [gals[3], circular_path, np.arange(20, dtype=int) + 120, [gals[3,1:], 5.0, 1, 20, 1, 0.75]],
