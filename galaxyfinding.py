@@ -26,14 +26,14 @@ SQL = """
         PROG.SnapNum = 28 and
         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
         AP.GalaxyID = DES.GalaxyID and
-        DES.GroupNumber IN (200, 175, 150, 125, 100, 75) and
+        DES.GroupNumber IN (200) and
         DES.SubGroupNumber = 0
 
 """
 
 # Grabs new data from db based on sql. If file name already exists, it loads that data instead
 
-filename = "6BigThings.p"
+filename = "aBigThings.p"
 
 raw_dbs = dbsPull(SQL, filename)
 print raw_dbs
