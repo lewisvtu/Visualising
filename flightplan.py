@@ -17,9 +17,9 @@ SQL = """
         DES.GalaxyID,
         PROG.SnapNum,
         PROG.MassType_Star,
-        (PROG.CentreOfPotential_x * %0.5f) as x,
-        (PROG.CentreOfPotential_y * %0.5f) as y,
-        (PROG.CentreOfPotential_z * %0.5f) as z,
+        (PROG.CentreOfPotential_x * %f) as x,
+        (PROG.CentreOfPotential_y * %f) as y,
+        (PROG.CentreOfPotential_z * %f) as z,
         PROG.Redshift
     FROM
         RefL0100N1504_Subhalo as PROG with(forceseek),
@@ -27,8 +27,8 @@ SQL = """
         RefL0100N1504_Aperture as AP
     WHERE
         DES.SnapNum = 28 and
-        DES.MassType_Star > 1.0e9 and
-        DES.MassType_DM > 5.0e10 and
+        DES.MassType_Star > 1.0e10 and
+        DES.MassType_DM > 1.0e11 and
         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
         AP.ApertureSize = 30 and
         AP.GalaxyID = DES.GalaxyID and
@@ -40,29 +40,31 @@ SQL = """
 
 # Grabs new data from db based on sql. If file name already exists, it loads that data instead
 
-filename = "FollowProgs3.p"
+filename = "scaledDB.p"
 
-raw_dbs = dbsPull(SQL, filename)
+# dbs_data = dbsPull(SQL, filename)
 
-shelf.push(raw_dbs, "followup2")
 
-dbs_data = shelf.pull("followup2")
 
-interesting_ids = {
 
-    13660659: 28,
-    13793733: 28,
-    13722615: 28,
-    20440704: 28,
-    17891603: 28,
-    14784533: 28
 
-}
-gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
-# Makes all galaxies have the form [sf,x,y,z] sorted by sf
-gals[:,-1] = 1.0 / (1.0 + gals[:,-1])
-gals = gals[np.argsort(gals[:,3])]
-gals = gals[:,[3,0,1,2]]
+# interesting_ids = {
+
+#     13660659: 28,
+#     13793733: 28,
+#     13722615: 28,
+#     20440704: 28,
+#     17891603: 28,
+#     14784533: 28
+
+# }
+# gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
+# # Makes all galaxies have the form [sf,x,y,z] sorted by sf
+# gals[:,-1] = 1.0 / (1.0 + gals[:,-1])
+# gals = gals[np.argsort(gals[:,3])]
+# gals = gals[:,[3,0,1,2]]
+
+# shelf.push(gals, filename)
 
 class path():
     def __init__(self, no_of_frames, collection):
@@ -178,10 +180,6 @@ def get_scalefactors(start_sf, end_sf, frames):
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
 
-def interpolate_vectors(start_vector, end_vector, zero_frames):
-    frame_range = len(zero_frames)
-    
-
 class spline3D():
     '''
     class for 3d splines.
@@ -213,44 +211,47 @@ class spline3D():
         ys = self.y_spline(fs)
         zs = self.z_spline(fs)
         return np.transpose(np.asarray([xs, ys, zs]))
-    
-'''
-galaxy : [frames, path_function, path_args]
-'''
-collection = np.asarray([
-    [gals[0], circular_path, np.arange(60, dtype=int), [gals[0,1:], 5.0, 0.5, 60, -1, 0.5, 3]],
-    #[gals[1], circular_path, np.arange(20, dtype=int) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5, 0]],
-    [gals[2], circular_path, np.arange(120, dtype=int) + 120, [gals[2,1:], 5.0, 1, 120, 1, 2.5, 2]],
-    [gals[3], circular_path, np.arange(60, dtype=int) + 300, [gals[3,1:], 5.0, 0.5, 60, 1, 0.75, 0]],
-    #[gals[4], circular_path, np.arange(20, dtype=int) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5, 0]],
-    #[gals[5], circular_path, np.arange(20, dtype=int) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5, 0]]
-])
-interested = [0,2,3]
-# collection = np.asarray([
-#     [gals[0], straight_path, np.arange(50), [gals[0,1:] + [3,3,-10], gals[0,1:] + [3,3, 10], 50.0]]
-# ])
-everything = path(360, collection)
-frames = everything.frames
-sfs = get_scalefactors(1,1,len(frames))
-xs, ys, zs = np.transpose(everything.coords)
-v3xs, v3ys, v3zs = np.transpose(everything.basis_z)
-v1xs, v1ys, v1zs = np.transpose(everything.basis_x)
-v2xs, v2ys, v2zs = np.transpose(everything.basis_y)
-fig = plt.figure()
-ax = fig.add_subplot(111, projection="3d")
-ax.set_xlabel("x")
-ax.set_ylabel("y")
-ax.set_zlabel("z")
-ax.plot(xs, ys, zs)
-for ele in interested:
-    ax.scatter(gals[ele,1], gals[ele,2], gals[ele,3])
-
-ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
-ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
-ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
-plt.show()
 
 
-setspace = np.transpose(np.asarray([frames, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
-#print setspace
-np.savetxt("tangential_splines.txt", setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
+if __name__ == __main__:
+    gals = shelf.pull(filename)    
+    '''
+    galaxy : [frames, path_function, path_args]
+    '''
+    collection = np.asarray([
+        [gals[0], circular_path, np.arange(60, dtype=int), [gals[0,1:], 5.0, 0.5, 60, -1, 0.5, 3]],
+        #[gals[1], circular_path, np.arange(20, dtype=int) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5, 0]],
+        [gals[2], circular_path, np.arange(120, dtype=int) + 120, [gals[2,1:], 5.0, 1, 120, 1, 2.5, 2]],
+        [gals[3], circular_path, np.arange(60, dtype=int) + 300, [gals[3,1:], 5.0, 0.5, 60, 1, 0.75, 0]],
+        #[gals[4], circular_path, np.arange(20, dtype=int) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5, 0]],
+        #[gals[5], circular_path, np.arange(20, dtype=int) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5, 0]]
+    ])
+    interested = [0,2,3]
+    # collection = np.asarray([
+    #     [gals[0], straight_path, np.arange(50), [gals[0,1:] + [3,3,-10], gals[0,1:] + [3,3, 10], 50.0]]
+    # ])
+    everything = path(360, collection)
+    frames = everything.frames
+    sfs = get_scalefactors(1,1,len(frames))
+    xs, ys, zs = np.transpose(everything.coords)
+    v3xs, v3ys, v3zs = np.transpose(everything.basis_z)
+    v1xs, v1ys, v1zs = np.transpose(everything.basis_x)
+    v2xs, v2ys, v2zs = np.transpose(everything.basis_y)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_zlabel("z")
+    ax.plot(xs, ys, zs)
+    for ele in interested:
+        ax.scatter(gals[ele,1], gals[ele,2], gals[ele,3])
+
+    ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+    ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+    ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+    plt.show()
+
+
+    setspace = np.transpose(np.asarray([frames, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
+    #print setspace
+    np.savetxt("tangential_splines.txt", setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
