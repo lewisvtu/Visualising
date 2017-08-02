@@ -55,16 +55,10 @@ def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles
 	coords[:,3] = coords[:,3]/coords[:,3]
 
 	#clips all galaxies that are not in your field of view
-	mask = np.where(np.logical_and(np.logical_and(np.logical_and(np.logical_and(np.logical_and(
-		coords[:,0] <= 1, coords[:,0] >=-1),
-		coords[:,1]<=1), coords[:,1]>=-1),
-		coords[:,2]<=1), coords[:,2]>=-1))
 
-	print mask
-	print "--------------------------------------------coords----------------------------------------"
-	
-	coords = coords[mask]
-	print coords 
+	coords_alt = np.asarray([coord for coord in coords if (abs(coord[0]) <= 1) and (abs(coord[1]) <= 1) and coord[2] > 0])
+	print coords_alt 
+
 	w_s         = region[0]
 	h_s         = region[1]
 	s_x         = 0.0
@@ -74,7 +68,7 @@ def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles
 							(0,h_s/2.,0,s_y+h_s/2.),
 							(0,0,(far-near)/2.,(near+far)/2.),
 							(0,0,0,0)])
-	coords      = np.dot(M_viewport, coords.T)
+	coords      = np.dot(M_viewport, coords_alt.T)
 
 
 
