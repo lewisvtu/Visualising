@@ -16,10 +16,10 @@ SQL = """
     SELECT
         DES.GalaxyID,
         PROG.SnapNum,
-        PROG.Mass,
-        PROG.CentreOfPotential_x,
-        PROG.CentreOfPotential_y,
-        PROG.CentreOfPotential_z,
+        PROG.MassType_Star,
+        (PROG.CentreOfPotential_x * %0.5f) as x,
+        (PROG.CentreOfPotential_y * %0.5f) as y,
+        (PROG.CentreOfPotential_z * %0.5f) as z,
         PROG.Redshift
     FROM
         RefL0100N1504_Subhalo as PROG with(forceseek),
@@ -36,11 +36,11 @@ SQL = """
     ORDER BY
         PROG.GalaxyID,
         PROG.SnapNum
-"""
+""" % (h,h,h)
 
 # Grabs new data from db based on sql. If file name already exists, it loads that data instead
 
-filename = "FollowProgs2.p"
+filename = "FollowProgs3.p"
 
 raw_dbs = dbsPull(SQL, filename)
 
@@ -251,6 +251,6 @@ ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
 plt.show()
 
 
-setspace = np.transpose(np.asarray([frames, sfs, xs*h, ys*h, zs*h, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
+setspace = np.transpose(np.asarray([frames, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
 #print setspace
 np.savetxt("tangential_splines.txt", setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
