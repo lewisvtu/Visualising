@@ -60,9 +60,11 @@ def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles
 		coords[:,1]<=1), coords[:,1]>=-1),
 		coords[:,2]<=1), coords[:,2]>=-1))
 
-	coords = coords[mask,:]
+	print mask
+	print "--------------------------------------------coords----------------------------------------"
+	
+	coords = coords[mask]
 	print coords 
-
 	w_s         = region[0]
 	h_s         = region[1]
 	s_x         = 0.0

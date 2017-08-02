@@ -49,7 +49,6 @@ dbs_data = shelf.pull("followup19")
 
 def story_board(dbs_data, viewing_distance, txt_name, path_file):
 
-    path_of_camera = np.loadtxt(path_file)
     frame, ts, xs, ys, zs, b1,b2,b3,b4,b5,b6,b7,b8,b9 = np.loadtxt(path_file, unpack=True)
     z_basis_s = np.transpose(np.asarray([b7, b8, b9]))
     y_basis_s = np.transpose(np.asarray([b4, b5, b6]))
@@ -145,8 +144,6 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
             if galaxy[2] >= 0.0:
                 positive_plot.append(galaxy)
 
-            else:
-                print "neg"
 
         nparr1 = np.asarray(positive_plot)
 
