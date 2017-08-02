@@ -70,9 +70,13 @@ class path():
         self.frames = np.arange(no_of_frames, dtype=int)
         self.coord_spline = self.gen_coord_spline()
         self.coords = self.coord_spline(self.frames)
-        self.basis_z = self.get_to_targets()
-        self.basis_x = self.orthonormalise(self.gen_tangent_vectors(), self.basis_z)
-        self.basis_y = self.cross_basis(self.basis_z, self.basis_x)
+        # self.basis_z = self.get_to_targets()
+        # self.basis_x = self.orthonormalise(self.gen_tangent_vectors(), self.basis_z)
+        # self.basis_y = self.cross_basis(self.basis_z, self.basis_x)
+        self.basis_z = self.gen_tangent_vectors()
+        self.basis_y = self.orthonormalise(np.asarray([[0,0,1]]*no_of_frames), self.basis_z)
+        self.basis_x = self.cross_basis(self.basis_y, self.basis_z)
+
 
     def gen_coord_spline(self):
         coords = []
@@ -132,7 +136,7 @@ def circular_path(frame_nos, args):
 
     args:
         frame_nos: the frame number/ array of frame numbers to compute the positions of
-        args: list of form [targ_gal, radius, orbits, #frames, direction, z_scaling]
+        args: list of form [targ_gal, radius, orbits, #frames, direction, z_scaling, angle_offset]
     '''
     decay = 0.5
     frame_nos = np.asarray(frame_nos)
@@ -141,12 +145,12 @@ def circular_path(frame_nos, args):
     orbits = args[2]
     frames = args[3]
     dir = args[4]
-
+    phi = args[5]
     z_factor = args[5]
     ang_int = orbits * 2*np.pi / frames
-    x_coords = target_coords[0] + dir * rad * np.sin(frame_nos * ang_int)
-    y_coords = target_coords[1] + dir * rad * np.cos(frame_nos * ang_int)
-    z_coords = target_coords[2] + dir * (rad* np.sin(frame_nos * ang_int)) * z_factor
+    x_coords = target_coords[0] + dir * rad * np.sin(frame_nos * ang_int + phi)
+    y_coords = target_coords[1] + dir * rad * np.cos(frame_nos * ang_int + phi)
+    z_coords = target_coords[2] + dir * (rad* np.sin(frame_nos * ang_int + phi)) * z_factor
 
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
 
@@ -214,18 +218,18 @@ class spline3D():
 galaxy : [frames, path_function, path_args]
 '''
 collection = np.asarray([
-    [gals[0], circular_path, np.arange(20, dtype=int), [gals[0,1:], 5.0, 1, 20, 1, 0.5]],
-    #[gals[1], circular_path, np.arange(20, dtype=int) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5]],
-    [gals[2], circular_path, np.arange(20, dtype=int) + 40, [gals[2,1:], 5.0, 1, 20, 1, 2.5]],
-    [gals[3], circular_path, np.arange(20, dtype=int) + 120, [gals[3,1:], 5.0, 1, 20, 1, 0.75]],
-    #[gals[4], circular_path, np.arange(20, dtype=int) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5]],
-    #[gals[5], circular_path, np.arange(20, dtype=int) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5]]
+    [gals[0], circular_path, np.arange(60, dtype=int), [gals[0,1:], 5.0, 0.5, 60, -1, 0.5, 3]],
+    #[gals[1], circular_path, np.arange(20, dtype=int) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5, 0]],
+    [gals[2], circular_path, np.arange(120, dtype=int) + 120, [gals[2,1:], 5.0, 1, 120, 1, 2.5, 2]],
+    [gals[3], circular_path, np.arange(60, dtype=int) + 300, [gals[3,1:], 5.0, 0.5, 60, 1, 0.75, 0]],
+    #[gals[4], circular_path, np.arange(20, dtype=int) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5, 0]],
+    #[gals[5], circular_path, np.arange(20, dtype=int) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5, 0]]
 ])
 interested = [0,2,3]
 # collection = np.asarray([
 #     [gals[0], straight_path, np.arange(50), [gals[0,1:] + [3,3,-10], gals[0,1:] + [3,3, 10], 50.0]]
 # ])
-everything = path(140, collection)
+everything = path(360, collection)
 frames = everything.frames
 sfs = get_scalefactors(1,1,len(frames))
 xs, ys, zs = np.transpose(everything.coords)
@@ -247,6 +251,6 @@ ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
 plt.show()
 
 
-# setspace = np.transpose(np.asarray([frames, sfs, xs/h, ys/h, zs/h, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
-# #print setspace
-# np.savetxt("straight_galbig.txt", setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
+setspace = np.transpose(np.asarray([frames, sfs, xs*h, ys*h, zs*h, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
+#print setspace
+np.savetxt("tangential_splines.txt", setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
