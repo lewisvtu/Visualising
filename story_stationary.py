@@ -7,15 +7,16 @@ import scipy
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from camTest import perspective_transfomation
+h = 0.6777
 
 SQL = """
     SELECT
         DES.GalaxyID,
         PROG.SnapNum,
-        PROG.Mass,
-        PROG.CentreOfPotential_x*%s,
-        PROG.CentreOfPotential_y*%s,
-        PROG.CentreOfPotential_z*%s,
+        PROG.MassType_Star,
+        (PROG.CentreOfPotential_x * %0.5f) as x,
+        (PROG.CentreOfPotential_y * %0.5f) as y,
+        (PROG.CentreOfPotential_z * %0.5f) as z,
         PROG.Redshift
     FROM
         RefL0100N1504_Subhalo as PROG with(forceseek),
@@ -24,7 +25,7 @@ SQL = """
     WHERE
         DES.SnapNum = 28 and
         DES.MassType_Star > 1.0e10 and
-        DES.MassType_DM > 5.0e11 and
+        DES.MassType_DM > 1.0e11 and
         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
         AP.ApertureSize = 30 and
         AP.GalaxyID = DES.GalaxyID and
@@ -32,11 +33,11 @@ SQL = """
     ORDER BY
         PROG.GalaxyID,
         PROG.SnapNum
-"""%(h,h,h)
+""" % (h,h,h)
 
-viewing_distance = 10.0
-h = 0.6777
-txt_name = "spline_tangential_"
+region = [10., 10., 10.] 
+viewing_distance = region[2]
+txt_name = "orbitWithCliped_"
 filename = "FollowProgs19.p"
 raw_dbs = dbsPull(SQL, filename)
 shelf.push(raw_dbs, "followup19")
@@ -53,11 +54,8 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
     z_basis_s = np.transpose(np.asarray([b7, b8, b9]))
     y_basis_s = np.transpose(np.asarray([b4, b5, b6]))
     x_basis_s = np.transpose(np.asarray([b1, b2, b3]))
-    #cam_position_s = np.transpose(np.array([xs, ys, zs]))
-    #print x_basis_s
-    xs =xs/h
-    ys =ys/h
-    zs =zs/h
+
+
     Line_plots_shown = []
     z_basis = []
     y_basis = []
@@ -133,7 +131,7 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
                 
                 particles = np.transpose( np.array([[xyz_glas[j][0]], [xyz_glas[j][1]], [xyz_glas[j][2]]]) )
 
-                arr = perspective_transfomation(x_bas, y_bas, z_bas, cam_position, particles)
+                arr = perspective_transfomation(x_bas, y_bas, z_bas, cam_position, particles, region)
                 new_arr = arr.flatten()[:3]
 
                 values_for_plot = np.r_[new_arr, xyz_glas[j][3]]
@@ -157,15 +155,15 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
 
         if len(nparr1) >= 1.0:
             labels = nparr1[:,3]
-            perspec_size = 10000 / nparr1[:,2]**2
+            perspec_size = 100.#10000 / nparr1[:,2]**2
             colors = []
 
             for mass in nparr1[:,4]:
-                if mass <= 1.0e11:
+                if mass <= 1.0e10:
                     colors.append("g")
-                elif mass > 1.0e11 and mass <= 1.0e12:
+                elif mass > 1.0e10 and mass <= 1.0e11:
                     colors.append("#FF8C00")
-                elif mass > 1.0e12:
+                elif mass > 1.0e11:
                     colors.append("r")    
 
             print colors
@@ -176,9 +174,9 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
             for g, txt in enumerate(labels):
                 plt.annotate(txt, (nparr1[g][0],nparr1[g][1]))
 
-            plt.ylim( - viewing_distance, viewing_distance)
-            plt.xlim( - viewing_distance, viewing_distance)
+            #plt.ylim( - viewing_distance, viewing_distance)
+            #plt.xlim( - viewing_distance, viewing_distance)
             plt.savefig(txt_name + str(i+1))
             plt.clf()
 
-story_board(dbs_data, viewing_distance, txt_name, "tangential_splines.txt")
+story_board(dbs_data, viewing_distance, txt_name, "gla200_0_orbit.txt")
