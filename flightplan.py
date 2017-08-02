@@ -213,7 +213,7 @@ class spline3D():
         return np.transpose(np.asarray([xs, ys, zs]))
 
 
-if __name__ == __main__:
+if __name__ == "__main__":
     gals = shelf.pull(filename)    
     '''
     galaxy : [frames, path_function, path_args]
