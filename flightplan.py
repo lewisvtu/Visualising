@@ -8,7 +8,7 @@ from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import UnivariateSpline
-import timeit
+from timeit import default_timer as timer
 
 
 h = 0.6777
@@ -38,16 +38,11 @@ SQL = """
         PROG.SnapNum
 """ % (h,h,h)
 
-# Grabs new data from db based on sql. If file name already exists, it loads that data instead
+# # Grabs new data from db based on sql. If file name already exists, it loads that data instead
 
 filename = "scaledDB.p"
 
 # dbs_data = dbsPull(SQL, filename)
-
-
-
-
-
 # interesting_ids = {
 
 #     13660659: 28,
@@ -66,7 +61,7 @@ filename = "scaledDB.p"
 
 # shelf.push(gals, filename)
 
-class path():
+class Path():
     def __init__(self, no_of_frames, collection):
         self.collection = collection
         self.frames = np.arange(no_of_frames, dtype=int)
@@ -79,7 +74,6 @@ class path():
         self.basis_y = self.orthonormalise(np.asarray([[0,0,1]]*no_of_frames), self.basis_z)
         self.basis_x = self.cross_basis(self.basis_y, self.basis_z)
 
-
     def gen_coord_spline(self):
         coords = []
         frames = []
@@ -89,10 +83,8 @@ class path():
         coords = np.asarray(coords)
         frames = np.asarray(frames)
         bundle = np.c_[frames, coords]
-        spl = spline3D(bundle)
+        spl = Spline3D(bundle)
         return spl
-
-
 
     def get_to_targets(self):
         look_at_dirs = np.zeros((len(self.frames),3))
@@ -132,29 +124,42 @@ class path():
         return basis_3
 
 
-def circular_path(frame_nos, args):
+def circular_path(frame_nos, circ_args):
     '''
     Given a frame number, returns x,y,z coords for the camera at that frame
 
     args:
         frame_nos: the frame number/ array of frame numbers to compute the positions of
-        args: list of form [targ_gal, radius, orbits, #frames, direction, z_scaling, angle_offset]
+        circ_args: a SpiralArgs object defining the path parameters
     '''
-    decay = 0.5
-    frame_nos = np.asarray(frame_nos)
-    target_coords = np.asarray(args[0])
-    rad = args[1]
-    orbits = args[2]
-    frames = args[3]
-    dir = args[4]
-    phi = args[5]
-    z_factor = args[5]
-    ang_int = orbits * 2*np.pi / frames
-    x_coords = target_coords[0] + dir * rad * np.sin(frame_nos * ang_int + phi)
-    y_coords = target_coords[1] + dir * rad * np.cos(frame_nos * ang_int + phi)
-    z_coords = target_coords[2] + dir * (rad* np.sin(frame_nos * ang_int + phi)) * z_factor
-
+    #Working in std spherical polars s.t. z=rcos(theta')
+    thetas = (frame_nos * circ_args.theta_dot) + circ_args.theta_off
+    phis   = (frame_nos * circ_args.phi_dot)   + circ_args.phi_off
+    radii  = (frame_nos * circ_args.rad_dot)   + circ_args.rad_off
+    
+    x_coords = circ_args.centre[0] + radii * np.sin(thetas) * np.cos(phis)
+    y_coords = circ_args.centre[1] + radii * np.sin(thetas) * np.sin(phis)
+    z_coords = circ_args.centre[2] + radii * np.cos(thetas)
+    #print x_coords, y_coords, z_coords
     return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
+
+class SpiralArgs():
+    '''
+    hold params for spiral paths
+    Args:
+        centre: the centre of the path of the form [x,y,z]
+        polar_vels: polar velocities, r_dot in Mpsc/h, theta_dot/ phi_dot in orbits per frame
+    '''
+    def __init__(self, centre, polar_vels, coord_offsets):
+        self.centre    = centre
+        self.rad_dot   = polar_vels[0]
+        self.theta_dot = polar_vels[1] * 2 * np.pi
+        self.phi_dot   = polar_vels[2] * 2 * np.pi
+        self.rad_off   = coord_offsets[0]
+        self.theta_off = coord_offsets[1]
+        self.phi_off   = coord_offsets[2]
+
+
 
 def straight_path(frame_nos, args):
     '''
@@ -164,7 +169,8 @@ def straight_path(frame_nos, args):
         args: [start_coord, end_coord, frame_length_of_path]
     Returns:
         coords: [[x,y,z], ...] list of coord/s on the line for the given frames
-            '''
+    '''
+    assert len(args) == 3
     frame_nos = np.asarray([frame_nos])
     frames = args[2]
     start_coords = args[0]
@@ -180,19 +186,14 @@ def get_scalefactors(start_sf, end_sf, frames):
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
 
-class spline3D():
+class Spline3D:
     '''
     class for 3d splines.
 
     '''
     def __init__(self, bundle, k=3):
         '''
-        Creates the spline3D object
-        Args:
-            bundle: [fks, xks, yks, zks] for pairs of know frames, xs, ys, and zs
-            k: integer order of the fitting function for numpy splines. Values accepted [1,5]
-        Returns:
-            spline3D object
+        Creates the S object
         '''
         fks, xks, yks, zks = np.transpose(bundle)
         self.x_spline = UnivariateSpline(fks, xks, k=k)
@@ -214,23 +215,25 @@ class spline3D():
 
 
 if __name__ == "__main__":
+    start = timer()
     gals = shelf.pull(filename)    
     '''
     galaxy : [frames, path_function, path_args]
+        circle path_args: [centre_pos, radius, #orbits, #frames, direction, z_scale, phi]
     '''
     collection = np.asarray([
-        [gals[0], circular_path, np.arange(60, dtype=int), [gals[0,1:], 5.0, 0.5, 60, -1, 0.5, 3]],
-        #[gals[1], circular_path, np.arange(20, dtype=int) + 40, [gals[1,1:], 5.0, 1, 20, 1, -0.5, 0]],
-        [gals[2], circular_path, np.arange(120, dtype=int) + 120, [gals[2,1:], 5.0, 1, 120, 1, 2.5, 2]],
-        [gals[3], circular_path, np.arange(60, dtype=int) + 300, [gals[3,1:], 5.0, 0.5, 60, 1, 0.75, 0]],
-        #[gals[4], circular_path, np.arange(20, dtype=int) + 160, [gals[4,1:], 5.0, 1, 20, 1, -0.5, 0]],
-        #[gals[5], circular_path, np.arange(20, dtype=int) + 200, [gals[5,1:], 5.0, 1, 20, 1, 1.5, 0]]
+        [gals[0], circular_path, np.arange(20, dtype=int), SpiralArgs(gals[0,1:], [0.,1/20.,1/20], [5.,0.,0.,])]
+        # [gals[2], circular_path, np.arange(20, dtype=int) + 15, SpiralArgs(gals[2,1:], [1.,1.,1.], [0.,0.,0.,]).set_vels(20., 0.75)],
+        # [gals[3], circular_path, np.arange(10, dtype=int) + 45, SpiralArgs(gals[3,1:], [1.,1.,1.], [0.,0.,0.,]).set_vels(10, 0.5)],
     ])
-    interested = [0,2,3]
+    interested = [0]
     # collection = np.asarray([
     #     [gals[0], straight_path, np.arange(50), [gals[0,1:] + [3,3,-10], gals[0,1:] + [3,3, 10], 50.0]]
     # ])
-    everything = path(360, collection)
+    everything = Path(20, collection)
+    end = timer()
+    
+    print "Time taken: %f" % (end-start)
     frames = everything.frames
     sfs = get_scalefactors(1,1,len(frames))
     xs, ys, zs = np.transpose(everything.coords)
@@ -255,3 +258,5 @@ if __name__ == "__main__":
     setspace = np.transpose(np.asarray([frames, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
     #print setspace
     np.savetxt("tangential_splines.txt", setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
+
+
