@@ -136,7 +136,7 @@ def circular_path(frame_nos, circ_args):
     thetas = (frame_nos * circ_args.theta_dot) + circ_args.theta_off
     phis   = (frame_nos * circ_args.phi_dot)   + circ_args.phi_off
     radii  = (frame_nos * circ_args.rad_dot)   + circ_args.rad_off
-    
+    print thetas, phis, radii
     x_coords = circ_args.centre[0] + radii * np.sin(thetas) * np.cos(phis)
     y_coords = circ_args.centre[1] + radii * np.sin(thetas) * np.sin(phis)
     z_coords = circ_args.centre[2] + radii * np.cos(thetas)
