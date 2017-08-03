@@ -138,7 +138,7 @@ dbs_data = shelf.pull("followup19")
 
 
 # #saves the paths of the flight plan to a text file
-# #np.savetxt("timeStoped.txt", linePoints,fmt='%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f', header='RefL0100N1504',comments='#')
+#np.savetxt("timeStoped.txt", linePoints,fmt='%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f', header='RefL0100N1504',comments='#')
 
 
 
