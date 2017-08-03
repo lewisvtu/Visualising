@@ -96,8 +96,9 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
                 snaps[galsnap[1]] = [galsnap]
             else: 
                 snaps[galsnap[1]].append(galsnap)
-
-
+    #print "snaps "
+    print snaps[28]
+    
     fig = plt.figure()
 
     for i in range(len(frame)):
@@ -109,8 +110,9 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
 
         for k in range(len(All_snaps28)):
             xyz_glas.append([All_snaps28[k][3], All_snaps28[k][4], All_snaps28[k][5], All_snaps28[k][0], All_snaps28[k][2]])
-
-
+        print "xyzglas ---------------------------------------"
+        print xyz_glas
+        assert False
         center_x = Line_plots_shown[i][0]
         center_y = Line_plots_shown[i][1]
         center_z = Line_plots_shown[i][2]
@@ -145,7 +147,16 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
                 positive_plot.append(galaxy)
 
 
+
+
+
+
+
         nparr1 = np.asarray(positive_plot)
+
+
+
+
 
         #print "nparr1 nnnnnnnnnnnnnnnnnnnnnnn"
         #print nparr1
@@ -171,8 +182,8 @@ def story_board(dbs_data, viewing_distance, txt_name, path_file):
             for g, txt in enumerate(labels):
                 plt.annotate(txt, (nparr1[g][0],nparr1[g][1]))
 
-            #plt.ylim( - viewing_distance, viewing_distance)
-            #plt.xlim( - viewing_distance, viewing_distance)
+            plt.ylim( - viewing_distance, viewing_distance)
+            plt.xlim( - viewing_distance, viewing_distance)
             plt.savefig(txt_name + str(i+1))
             plt.clf()
 
