@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import UnivariateSpline
 from timeit import default_timer as timer
-
+from camTest import coord_transform
 
 h = 0.6777
 SQL = """
@@ -123,28 +123,41 @@ class Path():
         basis_3 = basis_3 / np.linalg.norm(basis_3, axis=1)[:,None]
         return basis_3
 
-def orbital_path(frame_nos, orbital_args):
+def orbital_path(frame_range, orbital_args):
     '''
     creates coords mapping to a circular_path about a target coord
     Coords are initial generated in the orbital planes frame of reference, then transformed in to world coords
     '''
-    pass
+    thetas = orbital_args.w * np.arange(frame_range) + orbital_args.phi
+    #coords in plane basis
+    plane_xs = orbital_args.r * np.cos(thetas)
+    plane_ys = orbital_args.r * np.sin(thetas)
+    plane_zs = orbital_args.r *  0  *  thetas
+    plane_coords = np.asarray(plane_xs, plane_ys, plane_zs).T
+    
+    # transform in to world coords
+    coord_transform(orbital_args.basis[0], orbital_args.basis[1], orbital_args.basis[3], orbital_args.centre, plane_coords, inv=False)
+    
 
 
 
-class OrbitalArgs():
+class OrbitalArgs:
     '''
     holds args for orbital paths
     '''
     def __init__(self, centre, plane_normal, rad, angle_vel, angle_off):
         self.centre = centre
-        self.norm = plane_normal / np.linalg.norm(plane_normal)
-        self.w = angle_vel
-        self.phi = angle_off
-        self.r = rad
+        self.norm   = plane_normal / np.linalg.norm(plane_normal)
+        self.w      = angle_vel
+        self.phi    = angle_off
+        self.r      = rad
+        self.basis  = get_plane_basis(self.norm)
 
     def get_plane_basis(self, plane_normal):
-        basis_1 = np.random.randn(3)
+        if plane_normal == np.asarray([-np.pi, 5.3432, -8.7214]):
+            #You managed to choose the one normal vector that breaks this
+            print "wy tho ;("
+        basis_1 = np.asarray([-np.pi, 5.3432, -8.7214])
         basis_1 -= np.dot(basis_1, plane_normal)
         basis_1 /= np.linalg.norm(basis_1)
         basis_2 = np.cross(basis_1, plane_normal)
