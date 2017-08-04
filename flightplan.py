@@ -123,43 +123,32 @@ class Path():
         basis_3 = basis_3 / np.linalg.norm(basis_3, axis=1)[:,None]
         return basis_3
 
-
-def circular_path(frame_nos, circ_args):
+def orbital_path(frame_nos, orbital_args):
     '''
-    Given a frame number, returns x,y,z coords for the camera at that frame
-
-    args:
-        frame_nos: the frame number/ array of frame numbers to compute the positions of
-        circ_args: a SpiralArgs object defining the path parameters
+    creates coords mapping to a circular_path about a target coord
+    Coords are initial generated in the orbital planes frame of reference, then transformed in to world coords
     '''
-    #Working in std spherical polars s.t. z=rcos(theta')
-    thetas = (frame_nos * circ_args.theta_dot) + circ_args.theta_off
-    phis   = (frame_nos * circ_args.phi_dot)   + circ_args.phi_off
-    radii  = (frame_nos * circ_args.rad_dot)   + circ_args.rad_off
-    print thetas, phis, radii
-    x_coords = circ_args.centre[0] + radii * np.sin(thetas) * np.cos(phis)
-    y_coords = circ_args.centre[1] + radii * np.sin(thetas) * np.sin(phis)
-    z_coords = circ_args.centre[2] + radii * np.cos(thetas)
-    #print x_coords, y_coords, z_coords
-    return np.transpose(np.asarray([x_coords, y_coords, z_coords]))
+    pass
 
-class SpiralArgs():
+
+
+class OrbitalArgs():
     '''
-    hold params for spiral paths
-    Args:
-        centre: the centre of the path of the form [x,y,z]
-        polar_vels: polar velocities, r_dot in Mpsc/h, theta_dot/ phi_dot in orbits per frame
+    holds args for orbital paths
     '''
-    def __init__(self, centre, polar_vels, coord_offsets):
-        self.centre    = centre
-        self.rad_dot   = polar_vels[0]
-        self.theta_dot = polar_vels[1] * 2 * np.pi
-        self.phi_dot   = polar_vels[2] * 2 * np.pi
-        self.rad_off   = coord_offsets[0]
-        self.theta_off = coord_offsets[1]
-        self.phi_off   = coord_offsets[2]
+    def __init__(self, centre, plane_normal, rad, angle_vel, angle_off):
+        self.centre = centre
+        self.norm = plane_normal / np.linalg.norm(plane_normal)
+        self.w = angle_vel
+        self.phi = angle_off
+        self.r = rad
 
-
+    def get_plane_basis(self, plane_normal):
+        basis_1 = np.random.randn(3)
+        basis_1 -= np.dot(basis_1, plane_normal)
+        basis_1 /= np.linalg.norm(basis_1)
+        basis_2 = np.cross(basis_1, plane_normal)
+        return np.asarray([basis_1, basis_2, plane_normal])
 
 def straight_path(frame_nos, args):
     '''
@@ -222,7 +211,7 @@ if __name__ == "__main__":
         circle path_args: [centre_pos, radius, #orbits, #frames, direction, z_scale, phi]
     '''
     collection = np.asarray([
-        [gals[0], circular_path, np.arange(20, dtype=int), SpiralArgs(gals[0,1:], [0.,1/20.,1/20], [5.,0.,0.,])]
+        [gals[0], circular_path, np.arange(20, dtype=int), SpiralArgs(gals[0,1:], [0.,1/20.,0], [5.,np.pi/3,0.,])]
         # [gals[2], circular_path, np.arange(20, dtype=int) + 15, SpiralArgs(gals[2,1:], [1.,1.,1.], [0.,0.,0.,]).set_vels(20., 0.75)],
         # [gals[3], circular_path, np.arange(10, dtype=int) + 45, SpiralArgs(gals[3,1:], [1.,1.,1.], [0.,0.,0.,]).set_vels(10, 0.5)],
     ])
