@@ -68,6 +68,8 @@ def orderGals(dbs_data, snapshot_num):
 
     return snaps[snapshot_num]
 
+
+
 def story_board(txt_name, path_file, All_galaxies):
 
 	frame, ts, xs, ys, zs, b1,b2,b3,b4,b5,b6,b7,b8,b9 = np.loadtxt(path_file, unpack=True)
@@ -89,6 +91,11 @@ def story_board(txt_name, path_file, All_galaxies):
 
 
 		galaxies_to_plot = perspective_transfomation(x_bas, y_bas, z_bas, cam_position, All_galaxies, region)
+
+
+		# #change the size of the markers dep on the galaxy distance 
+		# for l in range(len(galaxies_to_plot)):
+		# 	distance = 
 
 
 
