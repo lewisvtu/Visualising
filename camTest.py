@@ -20,9 +20,9 @@ def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True
 		(0, 0, 0, 1)
 
 		])
-	if flag:
+	if inv:
 		M_world_camera = np.linalg.inv(M_world_camera)
-		
+
 	coords_in_cam = np.dot(M_world_camera, coords_none_trans)
 	return coords_in_cam
 
