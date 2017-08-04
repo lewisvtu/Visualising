@@ -28,10 +28,10 @@ def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True
 
 
 
-def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles, region):
+def perspective_transfomation(coords_in_cam, region):
 
 
-	coords_in_cam = coord_transform(x_basis, y_basis, z_basis, cam_position, particles)
+	#coords_in_cam = coord_transform(x_basis, y_basis, z_basis, cam_position, particles)
 
 	fov = np.pi / 4
 	d               = 1./(np.tan(fov/2.))

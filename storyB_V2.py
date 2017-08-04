@@ -4,6 +4,7 @@ import pickler.shelf as shelf
 from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from camTest import perspective_transfomation
+from camTest import coord_transform
 from timeit import default_timer as timer
 strt = timer()
 h = 0.6777
@@ -90,23 +91,28 @@ def story_board(txt_name, path_file, All_galaxies):
 		z_bas = z_basis[i]
 
 
-		galaxies_to_plot = perspective_transfomation(x_bas, y_bas, z_bas, cam_position, All_galaxies, region)
+		galaxies_trans = coord_transform(x_bas, y_bas, z_bas, cam_position, All_galaxies)
+
+		galaxies_afterT = np.transpose(galaxies_trans)
+
+
+		galaxies_to_plot = perspective_transfomation(galaxies_trans, region)
+
+
+
 
 		perspec = []
 
 		indexList = np.asarray(galaxies_to_plot[:,4], dtype=int)
 
-		galaxZs = All_galaxies[indexList][:,2]
+		galaxZs = galaxies_afterT[indexList][:,2]
 		print galaxZs
 		print cam_position
 
-		distance = galaxZs - cam_position[2]
-		# print distance
 
 
+		perspec = 10000./galaxZs**2
 
-		perspec = 100/distance**2
-		#print perspec
 
 
 
