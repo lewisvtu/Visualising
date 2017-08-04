@@ -92,14 +92,25 @@ def story_board(txt_name, path_file, All_galaxies):
 
 		galaxies_to_plot = perspective_transfomation(x_bas, y_bas, z_bas, cam_position, All_galaxies, region)
 
+		perspec = []
 
-		# #change the size of the markers dep on the galaxy distance 
-		# for l in range(len(galaxies_to_plot)):
-		# 	distance = 
+		indexList = np.asarray(galaxies_to_plot[:,4], dtype=int)
+
+		galaxZs = All_galaxies[indexList][:,2]
+		print galaxZs
+		print cam_position
+
+		distance = galaxZs - cam_position[2]
+		# print distance
 
 
 
-		plt.scatter(galaxies_to_plot[:,0],galaxies_to_plot[:,1],marker='o', s=50., c='c')
+		perspec = 100/distance**2
+		#print perspec
+
+
+
+		plt.scatter(galaxies_to_plot[:,0],galaxies_to_plot[:,1],marker='o', s=perspec, c='c')
 		# plt.ylim( 0, region[1])
 		# plt.xlim( - region[0]/2., region[0]/2.)
 		plt.ylim( -1., 1.)
