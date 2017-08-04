@@ -9,7 +9,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from numpy import pi  
 
 
-def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True):
+def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True):
 
 	coords_none_trans = np.transpose(np.c_[particles, np.ones(len(particles))])
 	M_world_camera = np.array([
@@ -22,8 +22,9 @@ def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True
 		])
 	if inv:
 		M_world_camera = np.linalg.inv(M_world_camera)
-
 	coords_in_cam = np.dot(M_world_camera, coords_none_trans)
+	if not homog:
+		return coords_in_cam[:-1,:]
 	return coords_in_cam
 
 
