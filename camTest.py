@@ -10,14 +10,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from numpy import pi  
 
 
-x, y, z = [70.], [70.], [10.]
-
-particles = np.transpose(np.array([x, y, z]))
-
-def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles, region):
-
-	fov = np.pi / 4
-
+def coord_transform(x_basis, y_basis, z_basis, cam_position, particles):
 
 	coords_none_trans = np.transpose(np.c_[particles, np.ones(len(particles))])
 	M_world_camera = np.linalg.inv(np.array([
@@ -29,9 +22,17 @@ def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles
 
 		]))
 
-
-
 	coords_in_cam = np.dot(M_world_camera, coords_none_trans)
+	return coords_in_cam
+
+
+
+def perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles, region):
+
+
+	coords_in_cam = coord_transform(x_basis, y_basis, z_basis, cam_position, particles)
+
+	fov = np.pi / 4
 	d               = 1./(np.tan(fov/2.))
 	aspect_ratio    = np.true_divide(region[0], region[1])
 	near            = region[2] * 0.0001
