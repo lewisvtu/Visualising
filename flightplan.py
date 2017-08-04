@@ -78,7 +78,7 @@ class Path():
         coords = []
         frames = []
         for galaxy, path_function, frame_set, path_args in self.collection:
-            coords = coords + list(path_function(frame_set, path_args))
+            coords = coords + list(path_function(len(frame_set), path_args))
             frames = frames + list(frame_set)
         coords = np.asarray(coords)
         frames = np.asarray(frames)
@@ -128,16 +128,17 @@ def orbital_path(frame_range, orbital_args):
     creates coords mapping to a circular_path about a target coord
     Coords are initial generated in the orbital planes frame of reference, then transformed in to world coords
     '''
-    thetas = orbital_args.w * np.arange(frame_range) + orbital_args.phi
+    thetas = np.arange(frame_range) * orbital_args.w + orbital_args.phi
     #coords in plane basis
     plane_xs = orbital_args.r * np.cos(thetas)
     plane_ys = orbital_args.r * np.sin(thetas)
     plane_zs = orbital_args.r *  0  *  thetas
-    plane_coords = np.asarray(plane_xs, plane_ys, plane_zs).T
-    
+    plane_coords = np.asarray([plane_xs, plane_ys, plane_zs]).T
+    print plane_coords, "-----------------"
     # transform in to world coords
-    coord_transform(orbital_args.basis[0], orbital_args.basis[1], orbital_args.basis[3], orbital_args.centre, plane_coords, inv=False)
-    
+    world_coords = coord_transform(orbital_args.basis[0], orbital_args.basis[1], orbital_args.basis[2], orbital_args.centre, plane_coords, inv=False, homog=False).T
+    print world_coords
+    return world_coords
 
 
 
@@ -145,20 +146,22 @@ class OrbitalArgs:
     '''
     holds args for orbital paths
     '''
-    def __init__(self, centre, plane_normal, rad, angle_vel, angle_off):
+    def __init__(self, centre, plane_normal, rad, rpf, rev_off):
         self.centre = centre
         self.norm   = plane_normal / np.linalg.norm(plane_normal)
-        self.w      = angle_vel
-        self.phi    = angle_off
+        self.w      = 2*np.pi*rpf
+        self.phi    = 2*np.pi*rev_off
         self.r      = rad
-        self.basis  = get_plane_basis(self.norm)
+        self.basis  = self.get_plane_basis(self.norm)
 
     def get_plane_basis(self, plane_normal):
-        if plane_normal == np.asarray([-np.pi, 5.3432, -8.7214]):
+        temp_vect = np.asarray([1,0,0])
+        if np.dot(temp_vect, plane_normal) == 1.:
+            temp_vect = np.asarray([0,1,0])
             #You managed to choose the one normal vector that breaks this
             print "wy tho ;("
-        basis_1 = np.asarray([-np.pi, 5.3432, -8.7214])
-        basis_1 -= np.dot(basis_1, plane_normal)
+        basis_1 = temp_vect / np.linalg.norm(temp_vect)
+        basis_1 -= np.dot(basis_1, plane_normal) * basis_1
         basis_1 /= np.linalg.norm(basis_1)
         basis_2 = np.cross(basis_1, plane_normal)
         return np.asarray([basis_1, basis_2, plane_normal])
@@ -223,16 +226,21 @@ if __name__ == "__main__":
     galaxy : [frames, path_function, path_args]
         circle path_args: [centre_pos, radius, #orbits, #frames, direction, z_scale, phi]
     '''
+    d1 = gals[0,1:] - gals[2,1:]
+    d2 = gals[0,1:] - gals[3,1:]
+
+    plane_norm = np.cross(d1,d2)
+
     collection = np.asarray([
-        [gals[0], circular_path, np.arange(20, dtype=int), SpiralArgs(gals[0,1:], [0.,1/20.,0], [5.,np.pi/3,0.,])]
-        # [gals[2], circular_path, np.arange(20, dtype=int) + 15, SpiralArgs(gals[2,1:], [1.,1.,1.], [0.,0.,0.,]).set_vels(20., 0.75)],
-        # [gals[3], circular_path, np.arange(10, dtype=int) + 45, SpiralArgs(gals[3,1:], [1.,1.,1.], [0.,0.,0.,]).set_vels(10, 0.5)],
+        [gals[0], orbital_path, np.arange(20, dtype=int)     , OrbitalArgs(gals[0,1:], plane_norm, 5., 0.5/20, 1/2)],
+        [gals[2], orbital_path, np.arange(20, dtype=int) + 40, OrbitalArgs(gals[2,1:], -plane_norm, 5., 0.5/20, -1/3)],
+        [gals[3], orbital_path, np.arange(20, dtype=int) + 80, OrbitalArgs(gals[3,1:], -plane_norm, 5., 0.5/20, 0.)]
     ])
-    interested = [0]
+    interested = [0,2,3]
     # collection = np.asarray([
     #     [gals[0], straight_path, np.arange(50), [gals[0,1:] + [3,3,-10], gals[0,1:] + [3,3, 10], 50.0]]
     # ])
-    everything = Path(20, collection)
+    everything = Path(100, collection)
     end = timer()
     
     print "Time taken: %f" % (end-start)
