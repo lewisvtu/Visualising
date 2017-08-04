@@ -37,7 +37,7 @@ SQL = """
         PROG.SnapNum
 """ % (h,h,h)
 
-txt_name = "ClippedAttempt2_"
+txt_name = "tangential_splines_"
 filename = "scaled_DBS.p"
 
 raw_dbs = dbsPull(SQL, filename)
@@ -106,17 +106,22 @@ def story_board(txt_name, path_file, All_galaxies):
 		indexList = np.asarray(galaxies_to_plot[:,4], dtype=int)
 
 		galaxZs = galaxies_afterT[indexList][:,2]
+		galZsMass = All_galaxies[indexList][:,2]
 		print galaxZs
 		print cam_position
 
 
 
-		perspec = 10000./galaxZs**2
+		perspec = 1./galaxZs**2
+		perspec *= (galZsMass)**0.333333
+		perspec.shape = (1, len(perspec))
+
+		print perspec,galaxies_to_plot
 
 
+		galaxies_to_plot = np.asarray(sorted(np.concatenate((galaxies_to_plot, perspec.T), axis=1), key=lambda coords: -coords[2]))
 
-
-		plt.scatter(galaxies_to_plot[:,0],galaxies_to_plot[:,1],marker='o', s=perspec, c='c')
+		plt.scatter(galaxies_to_plot[:,0],galaxies_to_plot[:,1],marker='o', s=galaxies_to_plot[:,5], c='#7E317B',edgecolors='k')
 		# plt.ylim( 0, region[1])
 		# plt.xlim( - region[0]/2., region[0]/2.)
 		plt.ylim( -1., 1.)
@@ -128,8 +133,9 @@ def story_board(txt_name, path_file, All_galaxies):
 
 
 All_galaxiesDATA = np.asarray(orderGals(dbs_data,28))
-All_galaxiesXYZ = All_galaxiesDATA[:,[3,4,5]]
+#All_galaxiesXYZ = All_galaxiesDATA[:,[3,4,5]]
 
-story_board( txt_name, "gla200_0_orbit.txt", All_galaxiesXYZ)
+story_board( txt_name, "tangential_splines.txt", All_galaxiesDATA)
+
 stp = timer()
 print "time taken: %f" %(stp - strt) 

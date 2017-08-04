@@ -10,7 +10,8 @@ from numpy import pi
 
 
 def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True):
-
+	ALL_DATA_RAW = particles
+	particles = particles[:,[3,4,5]]
 	coords_none_trans = np.transpose(np.c_[particles, np.ones(len(particles))])
 	M_world_camera = np.array([
 
