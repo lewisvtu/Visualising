@@ -1,5 +1,4 @@
 #rough test 
-import flightplan as fp
 import matplotlib.pyplot as plt
 import numpy as np
 import pickler.shelf as shelf
