@@ -61,7 +61,9 @@ def perspective_transfomation(coords_in_cam, region):
 	coords[:,3] = coords[:,3]/coords[:,3]
 
 	#clips all galaxies that are not in your field of view
-	coords_alt = np.asarray([np.append(coord, index) for index, coord  in enumerate(coords) if (abs(coord[0]) <= 1) and (abs(coord[1]) <= 1) and abs(coord[2]) <= 2])
+	coords_alt = np.asarray([np.append(coord, index) for index, coord  in enumerate(coords) if (abs(coord[0]) <= 1) and (abs(coord[1]) <= 1) and abs(coord[2]) <= 2
+
+		])
 	#print coords_alt 
 
 	# w_s         = region[0]
@@ -79,6 +81,9 @@ def perspective_transfomation(coords_in_cam, region):
 
 	return coords_alt
 
+
+# def galaxy_interpolation(scale_factor, dbs_data):
+	
 
 
 # xyz = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
