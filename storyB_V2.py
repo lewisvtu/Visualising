@@ -37,12 +37,15 @@ SQL = """
         PROG.SnapNum
 """ % (h,h,h)
 
-txt_name = "tangential_splines_2_"
+txt_name = "outwards_orbit150_"
 filename = "scaled_DBS.p"
 
 raw_dbs = dbsPull(SQL, filename)
 shelf.push(raw_dbs, "scaled_DBS")
 dbs_data = shelf.pull("scaled_DBS")
+
+print dbs_data
+assert False 
 
 
 
@@ -73,11 +76,14 @@ def orderGals(dbs_data, snapshot_num):
 
 def story_board(txt_name, path_file, All_galaxies):
 
+	''' This function returns '''
+
 	frame, ts, xs, ys, zs, b1,b2,b3,b4,b5,b6,b7,b8,b9 = np.loadtxt(path_file, unpack=True)
 	z_basis = np.transpose(np.asarray([b7, b8, b9]))
 	y_basis = np.transpose(np.asarray([b4, b5, b6]))
 	x_basis = np.transpose(np.asarray([b1, b2, b3]))
 	line_coords = np.transpose(np.asarray([xs, ys, zs]))
+
 
 
 	fig = plt.figure()
@@ -142,7 +148,7 @@ def story_board(txt_name, path_file, All_galaxies):
 All_galaxiesDATA = np.asarray(orderGals(dbs_data,28))
 #All_galaxiesXYZ = All_galaxiesDATA[:,[3,4,5]]
 
-story_board( txt_name, "tangential_splines.txt", All_galaxiesDATA)
+story_board( txt_name, "orbit150.txt", All_galaxiesDATA)
 
 stp = timer()
 print "time taken: %f" %(stp - strt) 
