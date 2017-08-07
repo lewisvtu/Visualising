@@ -42,38 +42,42 @@ SQL = """
 
 filename = "scaledDB.p"
 
-# dbs_data = dbsPull(SQL, filename)
-# interesting_ids = {
+dbs_data = dbsPull(SQL, filename)
+interesting_ids = {
 
-#     # 13660659: 28,
-#     # 13793733: 28,
-#     # 13722615: 28,
-#     # 20440704: 28,
-#     # 17891603: 28,
-#     # 14784533: 28,
-#     14308491: 28
+    13660659: 28,
+    13793733: 28,
+    13722615: 28,
+    20440704: 28,
+    17891603: 28,
+    14784533: 28,
+    14308491: 28
 
-# }
-# gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
-# # Makes all galaxies have the form [sf,x,y,z] sorted by sf
-# gals[:,-1] = 1.0 / (1.0 + gals[:,-1])
-# gals = gals[np.argsort(gals[:,3])]
-# gals = gals[:,[3,0,1,2]]
+}
+gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
+# Makes all galaxies have the form [sf,x,y,z] sorted by sf
+gals[:,-1] = 1.0 / (1.0 + gals[:,-1])
+gals = gals[np.argsort(gals[:,3])]
+gals = gals[:,[3,0,1,2]]
 
-# shelf.push(gals, filename)
+shelf.push(gals, filename)
 
 class Path():
     def __init__(self, no_of_frames, collection):
+        '''
+        collection looks like:
+            [target_gal, path_func, frames, path_args]
+        '''
         self.collection = collection
-        self.frames = np.arange(no_of_frames, dtype=int)
+        self.frames = np.arange(no_of_frames)
         self.coord_spline = self.gen_coord_spline()
-        self.coords = self.coord_spline(self.frames)
+        self.coords  = self.coord_spline(self.frames)
         self.basis_z = self.get_to_targets()
         self.basis_x = self.orthonormalise(self.gen_tangent_vectors(), self.basis_z)
         self.basis_y = self.cross_basis(self.basis_z, self.basis_x)
-        #self.basis_z = self.gen_tangent_vectors()
-        #self.basis_y = self.orthonormalise(np.asarray([[0,0,1]]*no_of_frames), self.basis_z)
-        #self.basis_x = self.cross_basis(self.basis_y, self.basis_z)
+        # self.basis_z = self.gen_tangent_vectors()
+        # self.basis_y = self.orthonormalise(np.asarray([[0,0,1]]*no_of_frames), self.basis_z)
+        # self.basis_x = self.cross_basis(self.basis_y, self.basis_z)
 
     def gen_coord_spline(self):
         coords = []
@@ -87,8 +91,16 @@ class Path():
         spl = Spline3D(bundle)
         return spl
 
-    def interp_get_to_targets(self):
-        for frame in self.frames
+    def get_interp_to_targets(self):
+        look_at_points = np.asarray([[True,0,0,0]]*len(self.frames))
+        last_look_at = np.asarray([0,0,0])
+        for galaxy, path_function, frame_set, path_args in self.collection:
+            target_coords = np.asarray(galaxy[1:])
+            look_at_points[frame_set,0] = frame_set
+            look_at_points[frame_set,1] = target_coords
+            look_at_points[frame_set,2] = last_look_at
+            last_look_at = target_coords
+        print look_at_points
 
 
     def get_to_targets(self):
@@ -103,6 +115,7 @@ class Path():
             calced_frames = calced_frames + list(frame_set)
         look_at_dirs = np.c_[self.frames, look_at_dirs]
         interp_frames = [frame[0] for frame in look_at_dirs if np.linalg.norm(frame[1:]) == 0]
+        print look_at_dirs
         return look_at_dirs[:,1:]
         
     def gen_tangent_vectors(self):
@@ -138,10 +151,8 @@ def orbital_path(frame_range, orbital_args):
     plane_ys = orbital_args.r * np.sin(thetas)
     plane_zs = orbital_args.r *  0  *  thetas
     plane_coords = np.asarray([plane_xs, plane_ys, plane_zs]).T
-    print plane_coords, "-----------------"
     # transform in to world coords
     world_coords = coord_transform(orbital_args.basis[0], orbital_args.basis[1], orbital_args.basis[2], orbital_args.centre, plane_coords, inv=False, homog=False, kieren=False).T
-    print world_coords
     return world_coords
 
 
@@ -230,47 +241,49 @@ if __name__ == "__main__":
     galaxy : [frames, path_function, path_args]
         circle path_args: [centre_pos, plane_norm, rad, rev_per_frame, rev_off]
     '''
-    # d1 = gals[0,1:] - gals[2,1:]
-    # d2 = gals[0,1:] - gals[3,1:]
+    d1 = gals[0,1:] - gals[2,1:]
+    d2 = gals[0,1:] - gals[3,1:]
 
-    # plane_norm = np.cross(d1,d2)
+    plane_norm = np.cross(d1,d2)
 
     collection = np.asarray([
-        #[gals[0], orbital_path, np.arange(20, dtype=int)     , OrbitalArgs(gals[0,1:], plane_norm, 5., 0.5/20, 1/2)],
-        #[gals[2], orbital_path, np.arange(20, dtype=int) + 40, OrbitalArgs(gals[2,1:], -plane_norm, 5., 0.5/20, -1/3)],
-        [gals[0], orbital_path, np.arange(40, dtype=int), OrbitalArgs(gals[0,1:], [0,1,1], 5., 1.5/40, 0.)]
+        [gals[0], orbital_path, np.arange(20, dtype=int)     , OrbitalArgs(gals[0,1:], plane_norm, 5., 0.5/20, 1/2)],
+        [gals[2], orbital_path, np.arange(20, dtype=int) + 40, OrbitalArgs(gals[2,1:], plane_norm, 5., 0.5/20, -1/3)],
+        [gals[4], orbital_path, np.arange(40, dtype=int) + 80, OrbitalArgs(gals[4,1:], plane_norm, 5., 1.5/40, 0.)]
     ])
-    interested = [0]
+    interested = [0,2,4]
     # collection = np.asarray([
     #     [gals[0], straight_path, np.arange(50), [gals[0,1:] + [3,3,-10], gals[0,1:] + [3,3, 10], 50.0]]
     # ])
-    everything = Path(40, collection)
-    end = timer()
-    fname = "orbit150.txt"
-    print "Time taken: %f" % (end-start)
-    frames = everything.frames
-    sfs = get_scalefactors(1,1,len(frames))
-    xs, ys, zs = np.transpose(everything.coords)
-    v3xs, v3ys, v3zs = np.transpose(everything.basis_z)
-    v1xs, v1ys, v1zs = np.transpose(everything.basis_x)
-    v2xs, v2ys, v2zs = np.transpose(everything.basis_y)
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="3d")
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_zlabel("z")
-    ax.plot(xs, ys, zs)
-    for ele in interested:
-        ax.scatter(gals[ele,1], gals[ele,2], gals[ele,3])
+    everything = Path(120, collection)
+    everything.get_interp_to_targets()
 
-    ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
-    ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
-    ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
-    plt.show()
+    # end = timer()
+    # fname = "orbit150.txt"
+    # print "Time taken: %f" % (end-start)
+    # frames = everything.frames
+    # sfs = get_scalefactors(1,1,len(frames))
+    # xs, ys, zs = np.transpose(everything.coords)
+    # v3xs, v3ys, v3zs = np.transpose(everything.basis_z)
+    # v1xs, v1ys, v1zs = np.transpose(everything.basis_x)
+    # v2xs, v2ys, v2zs = np.transpose(everything.basis_y)
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection="3d")
+    # ax.set_xlabel("x")
+    # ax.set_ylabel("y")
+    # ax.set_zlabel("z")
+    # ax.plot(xs, ys, zs)
+    # for ele in interested:
+    #     ax.scatter(gals[ele,1], gals[ele,2], gals[ele,3])
+
+    # ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+    # ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+    # ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+    # plt.show()
 
 
-    setspace = np.transpose(np.asarray([frames, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
-    #print setspace
-    np.savetxt(fname, setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
+    # setspace = np.transpose(np.asarray([frames, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
+    # #print setspace
+    # np.savetxt(fname, setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
 
 
