@@ -45,12 +45,13 @@ filename = "scaledDB.p"
 # dbs_data = dbsPull(SQL, filename)
 # interesting_ids = {
 
-#     13660659: 28,
-#     13793733: 28,
-#     13722615: 28,
-#     20440704: 28,
-#     17891603: 28,
-#     14784533: 28
+#     # 13660659: 28,
+#     # 13793733: 28,
+#     # 13722615: 28,
+#     # 20440704: 28,
+#     # 17891603: 28,
+#     # 14784533: 28,
+#     14308491: 28
 
 # }
 # gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
@@ -67,12 +68,12 @@ class Path():
         self.frames = np.arange(no_of_frames, dtype=int)
         self.coord_spline = self.gen_coord_spline()
         self.coords = self.coord_spline(self.frames)
-        # self.basis_z = self.get_to_targets()
-        # self.basis_x = self.orthonormalise(self.gen_tangent_vectors(), self.basis_z)
-        # self.basis_y = self.cross_basis(self.basis_z, self.basis_x)
-        self.basis_z = self.gen_tangent_vectors()
-        self.basis_y = self.orthonormalise(np.asarray([[0,0,1]]*no_of_frames), self.basis_z)
-        self.basis_x = self.cross_basis(self.basis_y, self.basis_z)
+        self.basis_z = self.get_to_targets()
+        self.basis_x = self.orthonormalise(self.gen_tangent_vectors(), self.basis_z)
+        self.basis_y = self.cross_basis(self.basis_z, self.basis_x)
+        #self.basis_z = self.gen_tangent_vectors()
+        #self.basis_y = self.orthonormalise(np.asarray([[0,0,1]]*no_of_frames), self.basis_z)
+        #self.basis_x = self.cross_basis(self.basis_y, self.basis_z)
 
     def gen_coord_spline(self):
         coords = []
@@ -86,6 +87,10 @@ class Path():
         spl = Spline3D(bundle)
         return spl
 
+    def interp_get_to_targets(self):
+        for frame in self.frames
+
+
     def get_to_targets(self):
         look_at_dirs = np.zeros((len(self.frames),3))
         calced_frames = []
@@ -98,7 +103,6 @@ class Path():
             calced_frames = calced_frames + list(frame_set)
         look_at_dirs = np.c_[self.frames, look_at_dirs]
         interp_frames = [frame[0] for frame in look_at_dirs if np.linalg.norm(frame[1:]) == 0]
-        print interp_frames
         return look_at_dirs[:,1:]
         
     def gen_tangent_vectors(self):
@@ -136,7 +140,7 @@ def orbital_path(frame_range, orbital_args):
     plane_coords = np.asarray([plane_xs, plane_ys, plane_zs]).T
     print plane_coords, "-----------------"
     # transform in to world coords
-    world_coords = coord_transform(orbital_args.basis[0], orbital_args.basis[1], orbital_args.basis[2], orbital_args.centre, plane_coords, inv=False, homog=False).T
+    world_coords = coord_transform(orbital_args.basis[0], orbital_args.basis[1], orbital_args.basis[2], orbital_args.centre, plane_coords, inv=False, homog=False, kieren=False).T
     print world_coords
     return world_coords
 
@@ -224,25 +228,25 @@ if __name__ == "__main__":
     gals = shelf.pull(filename)    
     '''
     galaxy : [frames, path_function, path_args]
-        circle path_args: [centre_pos, radius, #orbits, #frames, direction, z_scale, phi]
+        circle path_args: [centre_pos, plane_norm, rad, rev_per_frame, rev_off]
     '''
-    d1 = gals[0,1:] - gals[2,1:]
-    d2 = gals[0,1:] - gals[3,1:]
+    # d1 = gals[0,1:] - gals[2,1:]
+    # d2 = gals[0,1:] - gals[3,1:]
 
-    plane_norm = np.cross(d1,d2)
+    # plane_norm = np.cross(d1,d2)
 
     collection = np.asarray([
-        [gals[0], orbital_path, np.arange(20, dtype=int)     , OrbitalArgs(gals[0,1:], plane_norm, 5., 0.5/20, 1/2)],
-        [gals[2], orbital_path, np.arange(20, dtype=int) + 40, OrbitalArgs(gals[2,1:], -plane_norm, 5., 0.5/20, -1/3)],
-        [gals[3], orbital_path, np.arange(20, dtype=int) + 80, OrbitalArgs(gals[3,1:], -plane_norm, 5., 0.5/20, 0.)]
+        #[gals[0], orbital_path, np.arange(20, dtype=int)     , OrbitalArgs(gals[0,1:], plane_norm, 5., 0.5/20, 1/2)],
+        #[gals[2], orbital_path, np.arange(20, dtype=int) + 40, OrbitalArgs(gals[2,1:], -plane_norm, 5., 0.5/20, -1/3)],
+        [gals[0], orbital_path, np.arange(40, dtype=int), OrbitalArgs(gals[0,1:], [0,1,1], 5., 1.5/40, 0.)]
     ])
-    interested = [0,2,3]
+    interested = [0]
     # collection = np.asarray([
     #     [gals[0], straight_path, np.arange(50), [gals[0,1:] + [3,3,-10], gals[0,1:] + [3,3, 10], 50.0]]
     # ])
-    everything = Path(100, collection)
+    everything = Path(40, collection)
     end = timer()
-    
+    fname = "orbit150.txt"
     print "Time taken: %f" % (end-start)
     frames = everything.frames
     sfs = get_scalefactors(1,1,len(frames))
@@ -267,6 +271,6 @@ if __name__ == "__main__":
 
     setspace = np.transpose(np.asarray([frames, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
     #print setspace
-    np.savetxt("tangential_splines.txt", setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
+    np.savetxt(fname, setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
 
 
