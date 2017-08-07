@@ -8,7 +8,7 @@ from camTest import coord_transform
 from timeit import default_timer as timer
 strt = timer()
 h = 0.6777
-region = [10., 10., 10.]
+region = [15., 15., 15.]
 
 #SQL to grab from the database 
 SQL = """
@@ -37,7 +37,7 @@ SQL = """
         PROG.SnapNum
 """ % (h,h,h)
 
-txt_name = "tangential_splines_"
+txt_name = "tangential_splines_2_"
 filename = "scaled_DBS.p"
 
 raw_dbs = dbsPull(SQL, filename)
@@ -98,36 +98,43 @@ def story_board(txt_name, path_file, All_galaxies):
 
 		galaxies_to_plot = perspective_transfomation(galaxies_trans, region)
 
+		#this is to catch any frames that are of zero lenght ie no galaxies in view 
+		if len(galaxies_to_plot) >= 1:
+
+			perspec = []
+
+			indexList = np.asarray(galaxies_to_plot[:,4], dtype=int)
+
+			galaxZs = galaxies_afterT[indexList][:,2]
+			galZsMass = All_galaxies[indexList][:,2]
+			print galaxZs
+			print cam_position
 
 
 
-		perspec = []
+			perspec = 1./galaxZs**2
+			perspec *= (galZsMass)**0.333333
+			perspec.shape = (1, len(perspec))
 
-		indexList = np.asarray(galaxies_to_plot[:,4], dtype=int)
-
-		galaxZs = galaxies_afterT[indexList][:,2]
-		galZsMass = All_galaxies[indexList][:,2]
-		print galaxZs
-		print cam_position
+			print perspec,galaxies_to_plot
 
 
+			galaxies_to_plot = np.asarray(sorted(np.concatenate((galaxies_to_plot, perspec.T), axis=1), key=lambda coords: -coords[2]))
 
-		perspec = 1./galaxZs**2
-		perspec *= (galZsMass)**0.333333
-		perspec.shape = (1, len(perspec))
+			plt.scatter(galaxies_to_plot[:,0],galaxies_to_plot[:,1],marker='o', s=galaxies_to_plot[:,5], c='#7E317B',edgecolors='k')
+			# plt.ylim( 0, region[1])
+			# plt.xlim( - region[0]/2., region[0]/2.)
+			plt.ylim( -1., 1.)
+			plt.xlim( - 1., 1.)
+			plt.savefig(txt_name + str(i+1))
+			plt.clf()
 
-		print perspec,galaxies_to_plot
-
-
-		galaxies_to_plot = np.asarray(sorted(np.concatenate((galaxies_to_plot, perspec.T), axis=1), key=lambda coords: -coords[2]))
-
-		plt.scatter(galaxies_to_plot[:,0],galaxies_to_plot[:,1],marker='o', s=galaxies_to_plot[:,5], c='#7E317B',edgecolors='k')
-		# plt.ylim( 0, region[1])
-		# plt.xlim( - region[0]/2., region[0]/2.)
-		plt.ylim( -1., 1.)
-		plt.xlim( - 1., 1.)
-		plt.savefig(txt_name + str(i+1))
-		plt.clf()
+		else:
+			plt.scatter(0.0,0.0, s=0.0)
+			plt.ylim( -1., 1.)
+			plt.xlim( - 1., 1.)
+			plt.savefig(txt_name + str(i+1))
+			plt.clf()
 
 
 
