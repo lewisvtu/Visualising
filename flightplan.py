@@ -92,7 +92,7 @@ class Path():
         return spl
 
     def get_interp_to_targets(self):
-        look_at_points = np.asarray([[True,0,0,0]]*len(self.frames))
+        look_at_points = np.asarray([[0,[0,0,0],[0,0,0]]]*len(self.frames))
         last_look_at = np.asarray([0,0,0])
         for galaxy, path_function, frame_set, path_args in self.collection:
             target_coords = np.asarray(galaxy[1:])
