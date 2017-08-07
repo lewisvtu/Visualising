@@ -35,5 +35,19 @@ SQL = """
 
 filename = "aBigThings.p"
 
-raw_dbs = dbsPull(SQL, filename)
-print raw_dbs
+# raw_dbs = dbsPull(SQL, filename)
+# print raw_dbs
+fs, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs = np.loadtxt("orbit150.txt", unpack=True)
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+ax.plot(xs, ys, zs)
+
+
+ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+plt.show()
