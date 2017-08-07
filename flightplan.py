@@ -97,8 +97,8 @@ class Path():
         for galaxy, path_function, frame_set, path_args in self.collection:
             target_coords = np.asarray(galaxy[1:])
             look_at_points[frame_set,0] = frame_set
-            look_at_points[frame_set,1] = target_coords
-            look_at_points[frame_set,2] = last_look_at
+            look_at_points[frame_set,1] = [target_coords]*len(frame_set)
+            look_at_points[frame_set,2] = [last_look_at]*len(frame_set)
             last_look_at = target_coords
         print look_at_points
 
