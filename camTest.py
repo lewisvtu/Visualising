@@ -8,7 +8,30 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from numpy import pi  
 
+class dbs_data():
+    def __init__(self, sql_query, f_name):
+        self.dbs_data = dbsPull(sql_query, f_name)
+    
+    def galaxies_from_ids(self, interesting_ids):
+        '''
+        gives useful galaxy data for interesting ids and snapshots, in a useful form
 
+        Args:
+            interesting_ids [dictionary]: Maps keys of galaxyID to values of snapshots
+        
+        Returns:
+            interesting_gals [array]: [sf,x,y,z] for each galaxy in interesting_gals
+        '''
+        interesting_gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
+        interesting_gals[:,-1] = 1.0 / (1.0 + interesting_gals[:,-1])
+        gals = gals[np.argsort(gals[:,3])]
+        gals = gals[:,[3,0,1,2]]
+        return interesting_gals
+
+        def get_gals(self, redshift):
+            rsb = 
+            rsa = 
+            
 
 def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True, kieren=True):
 	ALL_DATA_RAW = particles
