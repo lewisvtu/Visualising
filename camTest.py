@@ -8,6 +8,14 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from numpy import pi  
 
+def get_scalefactors(start_sf, end_sf, frames):
+    '''
+    returns list of #frames scale factors scaled uniformly in log10 between start_sf and end_sf
+    '''
+    array_log_sf = np.linspace(np.log10(start_sf), np.log10(end_sf), frames)
+    array_sf = np.power(10, array_log_sf)
+    return array_sf[::-1]
+
 class dbs_data():
     def __init__(self, sql_query, f_name):
         self.dbs_data = dbsPull(sql_query, f_name)
@@ -28,9 +36,10 @@ class dbs_data():
         gals = gals[:,[3,0,1,2]]
         return interesting_gals
 
+
             
 
-def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True, kieren=True):
+def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True):
 	coords_none_trans = np.transpose(np.c_[particles, np.ones(len(particles))])
 	M_world_camera = np.array([
 
@@ -47,7 +56,9 @@ def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True
 		return coords_in_cam[:-1,:]
 	return coords_in_cam
 
-
+def find_nearest(array,value):
+    idx = (np.abs(array-value)).argmin()
+    return array[idx]
 
 def perspective_transfomation(coords_in_cam, region):
 
@@ -99,7 +110,39 @@ def perspective_transfomation(coords_in_cam, region):
 	return coords_alt
 
 
-# def galaxy_interpolation(scale_factor, dbs_data):
+def find_snapnums(scale_factor):
+
+	Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.17,
+	                     0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
+	                     0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
+	                     0.91, 1.00])
+
+	nearest_snapnumber = (np.abs(Expansion_F_snaps - scale_factor)).argmin()
+	if Expansion_F_snaps[nearest_snapnumber] == scale_factor:
+		beforeSnap = nearest_snapnumber
+		afterSnap = nearest_snapnumber
+
+	elif Expansion_F_snaps[nearest_snapnumber] > scale_factor:
+		beforeSnap = nearest_snapnumber-1
+		afterSnap = nearest_snapnumber
+
+	elif Expansion_F_snaps[nearest_snapnumber] < scale_factor:
+		beforeSnap = nearest_snapnumber
+		afterSnap = nearest_snapnumber+1
+
+	return [beforeSnap, afterSnap]	
+
+
+def galaxy_interpolation(scale_factor,dbs_data):
+
+	sideSnaps = find_snapnums(scale_factor)
+	beforeSnap, afterSnap = sideSnaps[0], sideSnaps[1]
+
+
+
+
+a = np.array([1.,2.,3.,4.],[2.2,3.,1.,6.])
+
 	
 
 
