@@ -2,7 +2,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pickler.shelf as shelf
-import math
 from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -16,7 +15,7 @@ def get_scalefactors(start_sf, end_sf, frames):
     array_sf = np.power(10, array_log_sf)
     return array_sf[::-1]
 
-class dbs_data():
+class Data():
     def __init__(self, sql_query, f_name):
         self.dbs_data = dbsPull(sql_query, f_name)
     
@@ -37,7 +36,15 @@ class dbs_data():
         return interesting_gals
 
 
-            
+def orthonormalise(new_vects, basis_1):
+    basis_2 = new_vects - (np.einsum("ij,ij->i", new_vects, basis_1) * basis_1.T).T
+    basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
+    return basis_2
+
+def cross_basis(basis_1, basis_2):
+    basis_3 = np.cross(basis_1, basis_2)
+    basis_3 = basis_3 / np.linalg.norm(basis_3, axis=1)[:,None]
+    return basis_3    
 
 def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True):
 	coords_none_trans = np.transpose(np.c_[particles, np.ones(len(particles))])
@@ -147,5 +154,4 @@ a = np.array([1.,2.,3.,4.],[2.2,3.,1.,6.])
 
 
 # xyz = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
-
 
