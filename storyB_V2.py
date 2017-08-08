@@ -139,7 +139,7 @@ def story_board(txt_name, path_file, All_galaxies):
 			plt.scatter(0.0,0.0, s=0.0)
 			plt.ylim( -1., 1.)
 			plt.xlim( - 1., 1.)
-			plt.savefig(txt_name + str(i+1))
+			plt.savefig(txt_name + str(i))
 			plt.clf()
 
 

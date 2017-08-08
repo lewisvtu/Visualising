@@ -3,7 +3,7 @@ frameNo = 50
 
 filenames = []
 for i in range(frameNo):
-	filenames.append("ClippedAttempt2_" + str(i+1) + ".png")
+	filenames.append("ClippedAttempt2_" + str(i) + ".png")
 
 
 images = []
