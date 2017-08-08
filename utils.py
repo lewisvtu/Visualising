@@ -2,13 +2,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pickler.shelf as shelf
-import math
 from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from numpy import pi  
 
-class dbs_data():
+class Data():
     def __init__(self, sql_query, f_name):
         self.dbs_data = dbsPull(sql_query, f_name)
     
@@ -28,9 +27,17 @@ class dbs_data():
         gals = gals[:,[3,0,1,2]]
         return interesting_gals
 
-            
+def orthonormalise(new_vects, basis_1):
+    basis_2 = new_vects - (np.einsum("ij,ij->i", new_vects, basis_1) * basis_1.T).T
+    basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
+    return basis_2
 
-def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True, kieren=True):
+def cross_basis(basis_1, basis_2):
+    basis_3 = np.cross(basis_1, basis_2)
+    basis_3 = basis_3 / np.linalg.norm(basis_3, axis=1)[:,None]
+    return basis_3    
+
+def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True):
 	coords_none_trans = np.transpose(np.c_[particles, np.ones(len(particles))])
 	M_world_camera = np.array([
 
@@ -104,5 +111,4 @@ def perspective_transfomation(coords_in_cam, region):
 
 
 # xyz = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
-
 
