@@ -28,15 +28,9 @@ class dbs_data():
         gals = gals[:,[3,0,1,2]]
         return interesting_gals
 
-        def get_gals(self, redshift):
-            rsb = 
-            rsa = 
             
 
 def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True, kieren=True):
-	ALL_DATA_RAW = particles
-	if kieren:
-		particles = particles[:,[3,4,5]]
 	coords_none_trans = np.transpose(np.c_[particles, np.ones(len(particles))])
 	M_world_camera = np.array([
 

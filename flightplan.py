@@ -63,16 +63,23 @@ gals = gals[:,[3,0,1,2]]
 shelf.push(gals, filename)
 
 class Path():
-    def __init__(self, no_of_frames, collection):
+    def __init__(self, no_of_frames, collection, many=True):
         '''
         collection looks like:
             [target_gal, path_func, frames, path_args]
         '''
         self.collection = collection
+        self.no_of_frames = no_of_frames
         self.frames = np.arange(no_of_frames)
-        self.coord_spline = self.gen_coord_spline()
-        self.coords  = self.coord_spline(self.frames)
-        self.basis_z = self.get_to_targets()
+        self.many = many
+        if many:
+            self.path_function = self.gen_coord_spline()
+            self.path_args = None
+        else:
+            self.path_function = collection[0, 1]
+            self.path_args = collection[0,3]
+        self.coords = self.path_function(self.frames, self.path_args)
+        self.basis_z = self.get_to_targets(self.path_function, self.path_args)
         self.basis_x = self.orthonormalise(self.gen_tangent_vectors(), self.basis_z)
         self.basis_y = self.cross_basis(self.basis_z, self.basis_x)
         # self.basis_z = self.gen_tangent_vectors()
@@ -92,35 +99,34 @@ class Path():
         return spl
 
     def get_interp_to_targets(self):
-        look_at_points = np.asarray([[0,[0,0,0],[0,0,0]]]*len(self.frames))
+        look_at_points = np.zeros((self.no_of_frames, 7))
         last_look_at = np.asarray([0,0,0])
         for galaxy, path_function, frame_set, path_args in self.collection:
             target_coords = np.asarray(galaxy[1:])
             look_at_points[frame_set,0] = frame_set
-            look_at_points[frame_set,1] = [target_coords]*len(frame_set)
-            look_at_points[frame_set,2] = [last_look_at]*len(frame_set)
+            look_at_points[frame_set,1:4] = [target_coords]*len(frame_set)
+            look_at_points[frame_set,4:7] = [last_look_at]*len(frame_set)
             last_look_at = target_coords
         print look_at_points
 
 
-    def get_to_targets(self):
+    def get_to_targets(self, path_function, path_args=None):
         look_at_dirs = np.zeros((len(self.frames),3))
         calced_frames = []
         for galaxy, path_function, frame_set, path_args in self.collection:
             target_coords = np.asarray(galaxy[1:])
-            path_coords = self.coord_spline(frame_set)
+            print frame_set, path_args
+            path_coords = path_function(frame_set, path_args)
             #print target_coords, path_coords
             look_vectors = target_coords - path_coords
             look_at_dirs[frame_set] = look_vectors / np.linalg.norm(look_vectors, axis=1)[:,None]
             calced_frames = calced_frames + list(frame_set)
         look_at_dirs = np.c_[self.frames, look_at_dirs]
         interp_frames = [frame[0] for frame in look_at_dirs if np.linalg.norm(frame[1:]) == 0]
-        print look_at_dirs
         return look_at_dirs[:,1:]
         
-    def gen_tangent_vectors(self):
+    def gen_tangent_vectors(self, path_function, path_args=None):
         frame_nos = self.frames
-        path_function = self.coord_spline
         derivs = np.zeros((len(frame_nos), 3))
         d_frame = 0.01
         for index in range(len(frame_nos)):
@@ -211,7 +217,7 @@ class Spline3D:
     class for 3d splines.
 
     '''
-    def __init__(self, bundle, k=3):
+    def __init__(self, bundle, k=3, args=None):
         '''
         Creates the S object
         '''
@@ -256,34 +262,34 @@ if __name__ == "__main__":
     #     [gals[0], straight_path, np.arange(50), [gals[0,1:] + [3,3,-10], gals[0,1:] + [3,3, 10], 50.0]]
     # ])
     everything = Path(120, collection)
-    everything.get_interp_to_targets()
+    #everything.get_interp_to_targets()
 
-    # end = timer()
-    # fname = "orbit150.txt"
-    # print "Time taken: %f" % (end-start)
-    # frames = everything.frames
-    # sfs = get_scalefactors(1,1,len(frames))
-    # xs, ys, zs = np.transpose(everything.coords)
-    # v3xs, v3ys, v3zs = np.transpose(everything.basis_z)
-    # v1xs, v1ys, v1zs = np.transpose(everything.basis_x)
-    # v2xs, v2ys, v2zs = np.transpose(everything.basis_y)
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection="3d")
-    # ax.set_xlabel("x")
-    # ax.set_ylabel("y")
-    # ax.set_zlabel("z")
-    # ax.plot(xs, ys, zs)
-    # for ele in interested:
-    #     ax.scatter(gals[ele,1], gals[ele,2], gals[ele,3])
+    end = timer()
+    fname = "orbit150.txt"
+    print "Time taken: %f" % (end-start)
+    frames = everything.frames
+    sfs = get_scalefactors(1,1,len(frames))
+    xs, ys, zs = np.transpose(everything.coords)
+    v3xs, v3ys, v3zs = np.transpose(everything.basis_z)
+    v1xs, v1ys, v1zs = np.transpose(everything.basis_x)
+    v2xs, v2ys, v2zs = np.transpose(everything.basis_y)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_zlabel("z")
+    ax.plot(xs, ys, zs)
+    for ele in interested:
+        ax.scatter(gals[ele,1], gals[ele,2], gals[ele,3])
 
-    # ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
-    # ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
-    # ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
-    # plt.show()
+    ax.quiver(xs,ys,zs, v1xs, v1ys, v1zs, color="#682860", pivot="tail")
+    ax.quiver(xs,ys,zs, v2xs, v2ys, v2zs, color="#000000", pivot="tail")
+    ax.quiver(xs,ys,zs, v3xs, v3ys, v3zs, color="#FF0000", pivot="tail")
+    plt.show()
 
 
-    # setspace = np.transpose(np.asarray([frames, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
-    # #print setspace
-    # np.savetxt(fname, setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f" )
+    setspace = np.transpose(np.asarray([frames, sfs, xs, ys, zs, v1xs, v1ys, v1zs, v2xs, v2ys, v2zs, v3xs, v3ys, v3zs]))
+    #print setspace
+    np.savetxt(fname, setspace, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f", header="RefL0100N1504" )
 
 

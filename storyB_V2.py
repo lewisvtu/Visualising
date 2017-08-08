@@ -97,7 +97,7 @@ def story_board(txt_name, path_file, All_galaxies):
 		z_bas = z_basis[i]
 
 
-		galaxies_trans = coord_transform(x_bas, y_bas, z_bas, cam_position, All_galaxies)
+		galaxies_trans = coord_transform(x_bas, y_bas, z_bas, cam_position, All_galaxies[:,[3,4,5]])
 
 		galaxies_afterT = np.transpose(galaxies_trans)
 
