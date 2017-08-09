@@ -1,104 +1,161 @@
 from __future__ import division
-import numpy as np
+
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.interpolate import UnivariateSpline
-from utils import coord_transform, orthonormalise, cross_basis
+import numpy as np
+
 import utils
-def orbital_path_function(frame_set, orbital_args):
+from utils import coord_transform, cross_basis, orthonormalise, Spline3D
+
+
+class SplinePath(object):
+    '''Spline paths that stitch together general paths'''
+    def __init__(self, knowns, k=3):
+        '''Args:
+            frame_set [reals]: set of frame numbers associated with the coordinates, used to
+                generate the spline
+            knowns [array]: set of known values, [frame,x,y,z]
+            k [0,1,2,3,4]: spline smoothing factor, defined by scipy'''
+        self.spline = Spline3D(knowns, k)
+
+    def __call__(self, frame_set):
+        '''get coords for new frame value/s
+        Args:
+            frames [real/s]: frame number/s to generate coords for
+        Returns:
+            coords [array]: coords of new frames [x,y,z]'''
+        return self.spline(frame_set)
+
+class OrbitalPath(object):
     '''Creates coords mapping to a circular_path about a target coord
     Coords are initial generated in the orbital planes frame of reference,
-    then transformed in to world coords
-    
-    Args:
-        frame_set [real/s]: Frame numbers for which to create points
-        orbital_args [OrbitalArgs]: argument class defining the orbital path
-    Returns:
-        world_coords [array]: list of coords for the path, [x,y,z]'''
-    thetas = frame_set * orbital_args.w + orbital_args.phi
-    #coords in plane basis
-    plane_xs = orbital_args.r * np.cos(thetas)
-    plane_ys = orbital_args.r * np.sin(thetas)
-    plane_zs = orbital_args.r *  0  *  thetas
-    plane_coords = np.asarray([plane_xs, plane_ys, plane_zs]).T
-    # transform in to world coords
-    world_coords = coord_transform(orbital_args.basis[0], orbital_args.basis[1], orbital_args.basis[2], orbital_args.centre, plane_coords, inv=False, homog=False).T
-    return world_coords
-
-
-class OrbitalArgs:
-    '''holds args for orbital paths'''
-    def __init__(self, centre, plane_normal, rad, rpf, rev_off):
-        '''sets up the arguments for the orbital path function
+    then transformed in to world coords'''
+    def __init__(self, centre, plane_normal, rad_vel, rpf,
+                 rad_off, rev_off, helix_vel=0, helix_off=0):
+        '''sets up the arguments for the orbital path
         Args:
             centre [array]: centre of the orbital path, [x,y,z]
             plane_normal [array]: vector [x,y,z] in the normal to the orbital plane
             rad [real]: radius of orbital path
             rpf [real]: angular velocity in revolutions per frame
-            rev_off [real]: angular offset of the start of the orbital path, in units of revolution'''
+            rev_off [real]: angular offset of the start of the orbital path, in units of
+                revolution'''
         self.centre = centre
-        self.norm   = plane_normal / np.linalg.norm(plane_normal)
-        self.w      = 2*np.pi*rpf
-        self.phi    = 2*np.pi*rev_off
-        self.r      = rad
-        self.basis  = self.get_plane_basis(self.norm)
+        self.norm = plane_normal / np.linalg.norm(plane_normal)
+        self.ang_vel = 2*np.pi*rpf
+        self.ang_off = 2*np.pi*rev_off
+        self.rad_vel = rad_vel
+        self.rad_off = rad_off
+        self.hel_vel = helix_vel
+        self.hel_off = helix_off
+        self.basis = self.get_plane_basis(self.norm)
+
 
     def get_plane_basis(self, plane_normal):
         '''Generates a basis for the plane to be used when transforming in to world coords
         Args:
             plane_normal [array]: Normal to the orbital plane
         Returns:
-            basis [array]: Array of basis vectors for the orbital reference frame [x_basis, y_basis, z_basis]
-                for basis [bx,by,bz] for bi real'''
-        temp_vect = np.asarray([1,0,0])
+            basis [array]: Array of basis vectors for the orbital reference frame
+                [x_basis, y_basis, z_basis] for basis [bx,by,bz] for bi real'''
+        temp_vect = np.array([1., 0., 0.])
         if np.dot(temp_vect, plane_normal) == 1.:
             #If normal in x dir, form basis from y instead
-            temp_vect = np.asarray([0,1,0])
-        basis_1  = temp_vect / np.linalg.norm(temp_vect)
+            temp_vect = np.asarray([0., 1., 0.])
+        basis_1 = temp_vect / np.linalg.norm(temp_vect)
         basis_1 -= np.dot(basis_1, plane_normal) * basis_1
         basis_1 /= np.linalg.norm(basis_1)
-        basis_2  = np.cross(basis_1, plane_normal)
+        basis_2 = np.cross(basis_1, plane_normal)
         return np.asarray([basis_1, basis_2, plane_normal])
 
-def vector_derivs(frame_set, path_function, path_args, d_frame = 0.01):
-    '''Calculated the vector derivatives/ tangents to the path.
+    def __call__(self, frame_set):
+        thetas = frame_set * self.ang_vel + self.ang_off
+        radii = frame_set * self.rad_vel + self.rad_off
+        #coords in obital axis frame
+        frame_xs = radii     * np.cos(thetas)
+        frame_ys = radii     * np.sin(thetas)
+        frame_zs = frame_set * self.hel_vel + self.hel_off
+        frame_coords = np.asarray([frame_xs, frame_ys, frame_zs])
+        #transform in to world coords
+        world_coords = coord_transform(self.basis[0], self.basis[1], self.basis[2],
+                                       self.centre, frame_coords, inv=False, homog=False, tran=True)
+        return np.asarray(world_coords)
+
+def vector_derivs(frame_set, path_function, d_frame=0.01):
+    '''Calculates the vector derivatives/ tangents to the path.
     Args:
         frame_set [real/s]: list of frame numbers to generate tangents at
-        path_function [function]: function defining the path. Must take frame number as first arg,
-            followed by path argument object
-        path_args [arg_object]: object containing arguments defining the path
+        path_function [PathObject]: callable object defining the path. Takes any number of
+            frames as an arg, returning the pos at those frames
         d_frame (optional) [real]: The dx used to find path difference
     Returns:
         derivs [array]: array of tangent vectors, [dx,dy,dz] normalised'''
     derivs = np.zeros((len(frame_set), 3))
     for index in range(len(frame_set)):
         frame_no = np.asarray([frame_set[index]])
-        derivs[index] = path_function(frame_no + d_frame/2, path_args) - path_function(frame_no - d_frame/2, path_args)
-    derivs /= np.linalg.norm(derivs, axis=1)[:,None]
+        derivs[index] = path_function(frame_no + d_frame/2) - path_function(frame_no - d_frame/2)
+    derivs /= np.linalg.norm(derivs, axis=1)[:, None]
     return derivs
 
 def look_at_vectors(path_coords, target_coords):
-    look_dirs  = target_coords - path_coords
-    look_dirs  /= np.linalg.norm(look_dirs, axis=1)[:,None]
+    '''calculates the look at vectors for given target coords and camera path coords
+    Args:
+        path_coords [array]: array of coords of the camera [x,y,z]
+        target_coords [array]: array of coords to look at [x,y,z]
+    Returns:
+        target_coords [array]: array of look at vectors'''
+    look_dirs = target_coords - path_coords
+    look_dirs /= np.linalg.norm(look_dirs, axis=1)[:, None]
     return look_dirs
 
+
 if __name__ == "__main__":
-    args = OrbitalArgs([11.2204,16.5994,12.0005], [0,1,1], 5, 1/20, 0)
-    frames = np.arange(30)
-    look_pos = np.asarray([[11.2204,16.5994,12.0005]]*30)
-    path_coords = orbital_path_function(frames, args)
+    no_frames = 30
+    #gal1_coords = [11.2204,16.5994,12.0005]
+    gal1_coords = np.asarray([0., 0., 0.])
+    test_coords = [
+        [0, 0, 0],
+        [10, 0, 0]
+    ]
+
+    path = OrbitalPath(gal1_coords, [0, 1, 1], 5/30, 1/15, 2, 0, 0, 5)
+    frames = np.arange(no_frames)
+    look_pos = np.tile(gal1_coords, (no_frames,1))
+    path_coords = path(frames)
     basis_3 = look_at_vectors(path_coords, look_pos)
-    tangents = vector_derivs(frames, orbital_path_function, args)
-    basis_2 = orthonormalise(tangents, basis_3)
-    basis_1 = cross_basis(basis_3, basis_2)
+    tangents = vector_derivs(frames, path)
+    basis_1 = orthonormalise(tangents, basis_3)
+    basis_2 = cross_basis(basis_3, basis_1)
+
+    # frames = np.arange(60)
+    # look_pos = np.asarray([[0,0,0]]*30 + [[10,0,0]]*30)
+    # first_path = OrbitalPath(test_coords[0], [1,0,0], -5/20, 2/20, 5, 0, 3/20, 0)
+    # sec_path = OrbitalPath(test_coords[1], [-1,0,0], 5/20, 2/20, 5, 0, -3/20, 3)
+
+    # first_set = np.c_[frames[:20], first_path(frames[:20])]
+    # sec_set = np.c_[frames[-20:], sec_path(frames[-20:])]
+    # tot_set = np.r_[first_set, sec_set]
+    # print tot_set
+    # path = SplinePath(tot_set)
+    # path_coords = path(frames)
+
+    # basis_3 = look_at_vectors(path_coords, look_pos)
+    # tangents = vector_derivs(frames, path)
+    # basis_1 = orthonormalise(tangents, basis_3)
+    # basis_2 = cross_basis(basis_3, basis_1)
+    #Plotting bits
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("z")
-    ax.quiver(path_coords[:,0],path_coords[:,1],path_coords[:,2], basis_1[:,0],basis_1[:,1],basis_1[:,2], pivot="tail", color="#FF0000")
-    ax.quiver(path_coords[:,0],path_coords[:,1],path_coords[:,2], basis_2[:,0],basis_2[:,1],basis_2[:,2], pivot="tail", color="#00FF00")
-    ax.quiver(path_coords[:,0],path_coords[:,1],path_coords[:,2], basis_3[:,0],basis_3[:,1],basis_3[:,2], pivot="tail", color="#0000FF")
+    ax.scatter(gal1_coords[0], gal1_coords[1], gal1_coords[2])
+    ax.quiver(path_coords[:, 0], path_coords[:, 1], path_coords[:, 2],
+              basis_1[:,0], basis_1[:, 1], basis_1[:, 2], pivot="tail", color="#FF0000")
+    ax.quiver(path_coords[:, 0], path_coords[:, 1] ,path_coords[:, 2],
+              basis_2[:, 0], basis_2[:, 1], basis_2[:, 2], pivot="tail", color="#00FF00")
+    ax.quiver(path_coords[:, 0],path_coords[:, 1],path_coords[:, 2],
+              basis_3[:, 0],basis_3[:, 1],basis_3[:, 2], pivot="tail", color="#0000FF")
     plt.show()
-    sfs = utils.get_scalefactors(0.1,1,30)
-    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Orbit_through_time.txt")
+    #make file
+    sfs = utils.get_scalefactors(0.38,0.68,no_frames)
+    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Orbit_through_les_time.txt")

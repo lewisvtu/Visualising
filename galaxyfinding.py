@@ -1,23 +1,18 @@
-import matplotlib.pyplot as plt
-import numpy as np
-import pickler.shelf as shelf
-import math
 from DBS.dbgrabber import dbsPull
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
 h=0.6777
 
 SQL = """
     SELECT DISTINCT
-        DES.GalaxyID,
-        PROG.SnapNum,
-        PROG.Mass,
+        DES.GalaxyID as id,
+        PROG.SnapNum as sn,
+        PROG.Mass as ma,
         (PROG.CentreOfPotential_x * %0.5f) as x,
         (PROG.CentreOfPotential_y * %0.5f) as y,
         (PROG.CentreOfPotential_z * %0.5f) as z,
-        PROG.Redshift,
-        DES.GroupNumber,
-        DES.SubGroupNumber
+        PROG.Redshift as rs,
+        DES.GroupNumber as gn,
+        DES.SubGroupNumber as sgn
     FROM
         RefL0025N0376_Subhalo as PROG with(forceseek),
         RefL0025N0376_Subhalo as DES,
@@ -35,5 +30,6 @@ SQL = """
 
 filename = "aBigThing.p"
 
-raw_dbs = dbsPull(SQL, filename)
-print raw_dbs
+raw_dbs = dbsPull(SQL, filename, make=False)
+
+print raw_dbs["id"]
