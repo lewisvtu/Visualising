@@ -4,11 +4,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import UnivariateSpline
 from utils import coord_transform, orthonormalise, cross_basis
-
-h = 0.6777
-
-
-
+import utils
 def orbital_path_function(frame_set, orbital_args):
     '''Creates coords mapping to a circular_path about a target coord
     Coords are initial generated in the orbital planes frame of reference,
@@ -87,14 +83,14 @@ def look_at_vectors(path_coords, target_coords):
     return look_dirs
 
 if __name__ == "__main__":
-    args = OrbitalArgs([0,0,0], [0,1,1], 5, 1/15, 0)
-    frames = np.arange(15)
-    temp_set = np.asarray([[0,0,1]]*15)
+    args = OrbitalArgs([11.2204,16.5994,12.0005], [0,1,1], 5, 1/20, 0)
+    frames = np.arange(30)
+    look_pos = np.asarray([[11.2204,16.5994,12.0005]]*30)
     path_coords = orbital_path_function(frames, args)
-    basis_1 = look_at_vectors(path_coords, temp_set)
+    basis_3 = look_at_vectors(path_coords, look_pos)
     tangents = vector_derivs(frames, orbital_path_function, args)
-    basis_2 = orthonormalise(tangents, basis_1)
-    basis_3 = cross_basis(basis_1, basis_2)
+    basis_2 = orthonormalise(tangents, basis_3)
+    basis_1 = cross_basis(basis_3, basis_2)
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
     ax.set_xlabel("x")
@@ -104,3 +100,5 @@ if __name__ == "__main__":
     ax.quiver(path_coords[:,0],path_coords[:,1],path_coords[:,2], basis_2[:,0],basis_2[:,1],basis_2[:,2], pivot="tail", color="#00FF00")
     ax.quiver(path_coords[:,0],path_coords[:,1],path_coords[:,2], basis_3[:,0],basis_3[:,1],basis_3[:,2], pivot="tail", color="#0000FF")
     plt.show()
+    sfs = utils.get_scalefactors(0.1,1,30)
+    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Orbit_through_time.txt")

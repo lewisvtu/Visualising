@@ -13,7 +13,16 @@ def get_scalefactors(start_sf, end_sf, frames):
     '''
     array_log_sf = np.linspace(np.log10(start_sf), np.log10(end_sf), frames)
     array_sf = np.power(10, array_log_sf)
-    return array_sf[::-1]
+    return array_sf
+
+def gen_flight_file(frames, sfs, coords, basis_vects, fname):
+    setspace = np.asarray([frames, sfs, coords[:,0]        , coords[:,1]        , coords[:,2],
+										basis_vects[0,:,0], basis_vects[0,:,1], basis_vects[0,:,2],
+										basis_vects[1,:,0], basis_vects[1,:,1], basis_vects[1,:,2],
+										basis_vects[2,:,0], basis_vects[2,:,1], basis_vects[2,:,2]])
+    #print setspace
+    np.savetxt(fname, setspace.T, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f", header="RefL0100N1504" )
+
 
 class Data():
     def __init__(self, sql_query, f_name):
@@ -145,15 +154,11 @@ def galaxy_interpolation(scale_factor,dbs_data):
 	all_raw_data = np.asarray(dbs_data)
 	sideSnaps = find_snapnums(scale_factor)
 	beforeSnap, afterSnap = sideSnaps[0], sideSnaps[1]
+	
 	gal_pairs = [[gal_before, gal_after] for gal_before, gal_after in ]
 
 
 
-
-
-a = np.array([1.,2.,3.,4.],[2.2,3.,1.,6.])
-
-	
 
 
 # xyz = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
