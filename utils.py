@@ -142,8 +142,11 @@ def find_snapnums(scale_factor):
 
 def galaxy_interpolation(scale_factor,dbs_data):
 
+	all_raw_data = np.asarray(dbs_data)
 	sideSnaps = find_snapnums(scale_factor)
 	beforeSnap, afterSnap = sideSnaps[0], sideSnaps[1]
+	gal_pairs = [[gal_before, gal_after] for gal_before, gal_after in ]
+
 
 
 

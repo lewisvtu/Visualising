@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from camTest import perspective_transfomation
 from camTest import coord_transform
 from timeit import default_timer as timer
-strt = timer()
+
 h = 0.6777
 region = [15., 15., 15.]
 
@@ -44,10 +44,10 @@ raw_dbs = dbsPull(SQL, filename)
 shelf.push(raw_dbs, "scaled_DBS")
 dbs_data = shelf.pull("scaled_DBS")
 
-print dbs_data
-assert False 
+#print dbs_data
+#assert False 
 
-
+strt = timer()
 
 def orderGals(dbs_data, snapshot_num):
 	#creates a dictionary of all the galaxies and all there snapshots 
@@ -145,10 +145,10 @@ def story_board(txt_name, path_file, All_galaxies):
 
 
 
-All_galaxiesDATA = np.asarray(orderGals(dbs_data,28))
+#All_galaxiesDATA = np.asarray(orderGals(dbs_data,28))
 #All_galaxiesXYZ = All_galaxiesDATA[:,[3,4,5]]
 
-story_board( txt_name, "orbit150.txt", All_galaxiesDATA)
-
+#story_board( txt_name, "orbit150.txt", All_galaxiesDATA)
+a = orderGals(dbs_data,28)
 stp = timer()
 print "time taken: %f" %(stp - strt) 
