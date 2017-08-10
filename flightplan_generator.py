@@ -118,7 +118,7 @@ if __name__ == "__main__":#
         [10, 0, 0]
     ]
 
-    path = OrbitalPath(gal1_coords, [0, 1, 1], 0, 0.25/30, 5, 0, 0, 0)
+    path = OrbitalPath(gal1_coords, [0, 0, 1], 0, 0.25/30, 5, 0, 0, 0)
     frames = np.arange(no_frames)
     look_pos = np.tile(gal1_coords, (no_frames,1))
     path_coords = path(frames)
@@ -139,10 +139,10 @@ if __name__ == "__main__":#
     # path_coords = path(frames)
     # print path_coords
 
-    basis_3 = look_at_vectors(path_coords, look_pos)
-    tangents = vector_derivs(frames, path)
-    basis_1 = orthonormalise(tangents, basis_3)
-    basis_2 = cross_basis(basis_3, basis_1)
+    # basis_3 = look_at_vectors(path_coords, look_pos)
+    # tangents = vector_derivs(frames, path)
+    # basis_1 = orthonormalise(tangents, basis_3)
+    # basis_2 = cross_basis(basis_3, basis_1)
     #Plotting bits
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
@@ -159,4 +159,4 @@ if __name__ == "__main__":#
     plt.show()
     #make file
     sfs = utils.get_scalefactors(0.44,0.6,no_frames)
-    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Paths/Orbit_through_les_time.txt")
+    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Orbit_through_les_time.txt")

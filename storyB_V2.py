@@ -132,7 +132,7 @@ def story_board(txt_name, path_file, snaps):
 
 
 			perspec = 1./galaxZs**2
-			perspec *= (galZsMass)**0.333333
+			perspec *= (galZsMass)**0.4
 			perspec.shape = (1, len(perspec))
 
 
