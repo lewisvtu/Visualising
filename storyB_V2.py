@@ -3,12 +3,20 @@ import numpy as np
 import pickler.shelf as shelf
 from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
-from camTest import perspective_transfomation
-from camTest import coord_transform
+from utils import perspective_transfomation
+from utils import coord_transform
 from timeit import default_timer as timer
+import utils
+from scipy.misc import imread
 
 h = 0.6777
 region = [15., 15., 15.]
+
+Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.17,
+                     0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
+                     0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
+                     0.91, 1.00])
+
 
 #SQL to grab from the database 
 SQL = """
@@ -21,9 +29,9 @@ SQL = """
         (PROG.CentreOfPotential_z * %0.5f) as z,
         PROG.Redshift
     FROM
-        RefL0100N1504_Subhalo as PROG with(forceseek),
-        RefL0100N1504_Subhalo as DES,
-        RefL0100N1504_Aperture as AP
+        RefL0025N0376_Subhalo as PROG with(forceseek),
+        RefL0025N0376_Subhalo as DES,
+        RefL0025N0376_Aperture as AP
     WHERE
         DES.SnapNum = 28 and
         DES.MassType_Star > 1.0e10 and
@@ -37,27 +45,32 @@ SQL = """
         PROG.SnapNum
 """ % (h,h,h)
 
-txt_name = "outwards_orbit150_"
-filename = "scaled_DBS.p"
+txt_name = "orbitThroughTime_"
+filename = "smallSim_DBS.p"
 
 raw_dbs = dbsPull(SQL, filename)
-shelf.push(raw_dbs, "scaled_DBS")
-dbs_data = shelf.pull("scaled_DBS")
+shelf.push(raw_dbs, "smallSim_DBS")
+dbs_data = shelf.pull("smallSim_DBS")
 
 #print dbs_data
 #assert False 
 
 strt = timer()
 
-def orderGals(dbs_data, snapshot_num):
+def galsTree(dbs_data):
 	#creates a dictionary of all the galaxies and all there snapshots 
     gals = {}
     for ele in dbs_data:
       galID = ele[0]
       if galID in gals.keys():
-          gals[galID].append([ele[i] for i in range(0, len(ele))])
+        gals[galID].append([ele[i] for i in range(0, len(ele))])
       else:
-          gals[galID] = [[ele[i] for i in range(0, len(ele))]]
+        gals[galID] = [[ele[i] for i in range(0, len(ele))]]
+    return gals
+
+
+
+def orderGals(gals, snapshot_num):          
 
     #to creat a dictionary in order to extract the positions of the glaxies at each snapshot
     snaps = {}
@@ -70,11 +83,11 @@ def orderGals(dbs_data, snapshot_num):
             else: 
                 snaps[galsnap[1]].append(galsnap)
 
-    return snaps[snapshot_num]
+    return snaps
 
 
 
-def story_board(txt_name, path_file, All_galaxies):
+def story_board(txt_name, path_file, snaps):
 
 	''' This function returns '''
 
@@ -89,13 +102,15 @@ def story_board(txt_name, path_file, All_galaxies):
 	fig = plt.figure()
 	#to loop over every frame which will be plot on the story board
 	for i in range(len(frame)):
-
+		print "creating image: " + str(i)
 		#to find the new camera position on the path
 		cam_position = [xs[i], ys[i], zs[i]]
 		x_bas = x_basis[i]
 		y_bas = y_basis[i]
 		z_bas = z_basis[i]
+		scale_factor = ts[i]
 
+		All_galaxies = utils.galaxy_interpolation(scale_factor, dbs_data, snaps)
 
 		galaxies_trans = coord_transform(x_bas, y_bas, z_bas, cam_position, All_galaxies[:,[3,4,5]])
 
@@ -113,8 +128,6 @@ def story_board(txt_name, path_file, All_galaxies):
 
 			galaxZs = galaxies_afterT[indexList][:,2]
 			galZsMass = All_galaxies[indexList][:,2]
-			print galaxZs
-			print cam_position
 
 
 
@@ -122,16 +135,16 @@ def story_board(txt_name, path_file, All_galaxies):
 			perspec *= (galZsMass)**0.333333
 			perspec.shape = (1, len(perspec))
 
-			print perspec,galaxies_to_plot
 
 
 			galaxies_to_plot = np.asarray(sorted(np.concatenate((galaxies_to_plot, perspec.T), axis=1), key=lambda coords: -coords[2]))
-
+			img = imread("gas_%06i.png"%(i))
 			plt.scatter(galaxies_to_plot[:,0],galaxies_to_plot[:,1],marker='o', s=galaxies_to_plot[:,5], c='#7E317B',edgecolors='k')
 			# plt.ylim( 0, region[1])
 			# plt.xlim( - region[0]/2., region[0]/2.)
 			plt.ylim( -1., 1.)
 			plt.xlim( - 1., 1.)
+			plt.imshow(img,extent=[-1.,1.,-1.,1.], aspect='auto')
 			plt.savefig(txt_name + str(i+1))
 			plt.clf()
 
@@ -144,11 +157,10 @@ def story_board(txt_name, path_file, All_galaxies):
 
 
 
+gals = galsTree(dbs_data)
+snaps = orderGals(gals, 1)
 
-#All_galaxiesDATA = np.asarray(orderGals(dbs_data,28))
-#All_galaxiesXYZ = All_galaxiesDATA[:,[3,4,5]]
+story_board( txt_name, "Orbit_through_time.txt", snaps)
 
-#story_board( txt_name, "orbit150.txt", All_galaxiesDATA)
-a = orderGals(dbs_data,28)
 stp = timer()
 print "time taken: %f" %(stp - strt) 

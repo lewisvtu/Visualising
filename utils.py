@@ -6,6 +6,13 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from numpy import pi  
 from scipy.interpolate import UnivariateSpline
+
+Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.17,
+                     0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
+                     0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
+                     0.91, 1.00])
+
+
 def get_scalefactors(start_sf, end_sf, frames):
     '''
     returns list of #frames scale factors scaled uniformly in log10 between start_sf and end_sf
@@ -180,11 +187,73 @@ def find_snapnums(scale_factor):
 	return [beforeSnap, afterSnap]	
 
 
-def galaxy_interpolation(scale_factor,dbs_data):
+def orderGals_all(dbs_data, snapshot_num):
+
+    snaps = {}
+    for galID in gals.keys()[:]:
+        gal = gals[galID]
+
+        for galsnap in gal:
+            if galsnap[1] not in snaps.keys():
+                snaps[galsnap[1]] = [galsnap]
+            else: 
+                snaps[galsnap[1]].append(galsnap)
+
+    return snaps
+
+
+
+def galsTree(dbs_data):
+	#creates a dictionary of all the galaxies and all there snapshots 
+    gals = {}
+    for ele in dbs_data:
+      galID = ele[0]
+      if galID in gals.keys():
+          gals[galID].append([ele[i] for i in range(0, len(ele))])
+      else:
+          gals[galID] = [[ele[i] for i in range(0, len(ele))]]
+
+    return gals  
+
+
+
+
+def galaxy_interpolation(scale_factor, dbs_data, snaps):
+	#gals is all snaps dictionary
 
 	all_raw_data = np.asarray(dbs_data)
 	sideSnaps = find_snapnums(scale_factor)
 	beforeSnap, afterSnap = sideSnaps[0], sideSnaps[1]
+
+	beforeGals = np.asarray(snaps[beforeSnap])
+	afterGals = np.asarray(snaps[afterSnap])
+
+
+	if beforeSnap == afterSnap:
+		return beforeGals
+
+	else:	
+
+		#romoves any galaxies that aren't in both snapshots 
+		afterGalsS = np.asarray([after_gal for after_gal in afterGals if after_gal[0] in beforeGals[:,0]])
+		beforeGalsS = np.asarray([before_gal for before_gal in beforeGals if before_gal[0] in afterGals[:,0]])
+
+		#sort them by the id's so that they are in the same order
+		afterGalsS = afterGalsS[afterGalsS[:,0].argsort()]
+		beforeGalsS = beforeGalsS[beforeGalsS[:,0].argsort()]
+		#print beforeGalsS
+		delta_coords = afterGalsS[:,3:6] - beforeGalsS[:,3:6]
+		delta_time = Expansion_F_snaps[afterSnap] - scale_factor
+
+		fracTime = delta_time / (Expansion_F_snaps[afterSnap] - Expansion_F_snaps[beforeSnap])
+		fracCoords = delta_coords * fracTime
+
+		beforeGalsS[:,3:6] = beforeGalsS[:,3:6] + fracCoords
+
+		InterpGals = beforeGalsS
+
+		return InterpGals 
+
 
 
 
