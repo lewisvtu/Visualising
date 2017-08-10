@@ -1,4 +1,3 @@
-#rough test 
 import matplotlib.pyplot as plt
 import numpy as np
 import pickler.shelf as shelf
@@ -6,12 +5,13 @@ from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from numpy import pi  
-
+from scipy.interpolate import UnivariateSpline
 
 Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.17,
                      0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
                      0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
                      0.91, 1.00])
+
 
 def get_scalefactors(start_sf, end_sf, frames):
     '''
@@ -22,12 +22,40 @@ def get_scalefactors(start_sf, end_sf, frames):
     return array_sf
 
 def gen_flight_file(frames, sfs, coords, basis_vects, fname):
-    setspace = np.asarray([frames, sfs, coords[:,0]        , coords[:,1]        , coords[:,2],
+    setspace = np.asarray([frames, sfs, coords[:,0]       , coords[:,1]       , coords[:,2],
 										basis_vects[0,:,0], basis_vects[0,:,1], basis_vects[0,:,2],
 										basis_vects[1,:,0], basis_vects[1,:,1], basis_vects[1,:,2],
 										basis_vects[2,:,0], basis_vects[2,:,1], basis_vects[2,:,2]])
     #print setspace
     np.savetxt(fname, setspace.T, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f", header="RefL0100N1504" )
+
+
+class Spline3D:
+    '''
+    class for 3d splines.
+
+    '''
+    def __init__(self, bundle, k=3):
+        '''
+        Creates the Spline object
+        '''
+        fks, xks, yks, zks = np.transpose(bundle)
+        self.x_spline = UnivariateSpline(fks, xks, k=k)
+        self.y_spline = UnivariateSpline(fks, yks, k=k)
+        self.z_spline = UnivariateSpline(fks, zks, k=k)
+
+    def __call__(self, fs):
+        '''
+        Generates new points for given frames
+        Args:
+            fs: New frames to generate points for
+        Returns:
+            [[x,y,z], ...] list of new coords in order of given frames
+        '''
+        xs = self.x_spline(fs)
+        ys = self.y_spline(fs)
+        zs = self.z_spline(fs)
+        return np.transpose(np.asarray([xs, ys, zs]))
 
 
 class Data():
@@ -61,7 +89,9 @@ def cross_basis(basis_1, basis_2):
     basis_3 = basis_3 / np.linalg.norm(basis_3, axis=1)[:,None]
     return basis_3    
 
-def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True):
+def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True, tran=False):
+	if tran:
+		particles = particles.T
 	coords_none_trans = np.transpose(np.c_[particles, np.ones(len(particles))])
 	M_world_camera = np.array([
 
@@ -75,7 +105,9 @@ def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True
 		M_world_camera = np.linalg.inv(M_world_camera)
 	coords_in_cam = np.dot(M_world_camera, coords_none_trans)
 	if not homog:
-		return coords_in_cam[:-1,:]
+		coords_in_cam = coords_in_cam[:-1,:]
+	if tran:
+		coords_in_cam = coords_in_cam.T
 	return coords_in_cam
 
 def find_nearest(array,value):
@@ -221,15 +253,6 @@ def galaxy_interpolation(scale_factor, dbs_data, snaps):
 		InterpGals = beforeGalsS
 
 		return InterpGals 
-
-
-
-
-
-
-
-
-
 
 
 
