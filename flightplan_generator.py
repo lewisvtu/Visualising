@@ -58,7 +58,7 @@ class OrbitalPath(object):
             basis [array]: Array of basis vectors for the orbital reference frame
                 [x_basis, y_basis, z_basis] for basis [bx,by,bz] for bi real'''
         temp_vect = np.array([1., 0., 0.])
-        if np.dot(temp_vect, plane_normal) == 1.:
+        if abs(np.dot(temp_vect, plane_normal)) == 1.:
             #If normal in x dir, form basis from y instead
             temp_vect = np.asarray([0., 1., 0.])
         basis_1 = temp_vect / np.linalg.norm(temp_vect)
@@ -108,7 +108,8 @@ def look_at_vectors(path_coords, target_coords):
     return look_dirs
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":#
+    print "Actually started running -_- z z z"
     no_frames = 30
     #gal1_coords = [11.2204,16.5994,12.0005]
     gal1_coords = np.asarray([0., 0., 0.])
@@ -117,31 +118,31 @@ if __name__ == "__main__":
         [10, 0, 0]
     ]
 
-    path = OrbitalPath(gal1_coords, [0, 1, 1], 5/30, 1/15, 2, 0, 0, 5)
-    frames = np.arange(no_frames)
-    look_pos = np.tile(gal1_coords, (no_frames,1))
-    path_coords = path(frames)
-    basis_3 = look_at_vectors(path_coords, look_pos)
-    tangents = vector_derivs(frames, path)
-    basis_1 = orthonormalise(tangents, basis_3)
-    basis_2 = cross_basis(basis_3, basis_1)
-
-    # frames = np.arange(60)
-    # look_pos = np.asarray([[0,0,0]]*30 + [[10,0,0]]*30)
-    # first_path = OrbitalPath(test_coords[0], [1,0,0], -5/20, 2/20, 5, 0, 3/20, 0)
-    # sec_path = OrbitalPath(test_coords[1], [-1,0,0], 5/20, 2/20, 5, 0, -3/20, 3)
-
-    # first_set = np.c_[frames[:20], first_path(frames[:20])]
-    # sec_set = np.c_[frames[-20:], sec_path(frames[-20:])]
-    # tot_set = np.r_[first_set, sec_set]
-    # print tot_set
-    # path = SplinePath(tot_set)
+    # path = OrbitalPath(gal1_coords, [0, 1, 1], 5/30, 1/15, 2, 0, 0, 5)
+    # frames = np.arange(no_frames)
+    # look_pos = np.tile(gal1_coords, (no_frames,1))
     # path_coords = path(frames)
-
     # basis_3 = look_at_vectors(path_coords, look_pos)
     # tangents = vector_derivs(frames, path)
     # basis_1 = orthonormalise(tangents, basis_3)
     # basis_2 = cross_basis(basis_3, basis_1)
+
+    frames = np.arange(60)
+    look_pos = np.asarray([[0,0,0]]*30 + [[10,0,0]]*30)
+    first_path = OrbitalPath(test_coords[0], [1,0,0], -5/20, 2/20, 5, 0, 0, 0)
+    sec_path = OrbitalPath(test_coords[1], [-1,0,0], 5/20, 2/20, 5, 0, 0, 3)
+
+    first_set = np.c_[frames[:20], first_path(frames[:20])]
+    sec_set = np.c_[frames[-20:], sec_path(frames[-20:])]
+    tot_set = np.r_[first_set, sec_set]
+    path = sec_path
+    path_coords = path(frames)
+    print path_coords
+
+    basis_3 = look_at_vectors(path_coords, look_pos)
+    tangents = vector_derivs(frames, path)
+    basis_1 = orthonormalise(tangents, basis_3)
+    basis_2 = cross_basis(basis_3, basis_1)
     #Plotting bits
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
@@ -156,6 +157,6 @@ if __name__ == "__main__":
     ax.quiver(path_coords[:, 0],path_coords[:, 1],path_coords[:, 2],
               basis_3[:, 0],basis_3[:, 1],basis_3[:, 2], pivot="tail", color="#0000FF")
     plt.show()
-    #make file
-    sfs = utils.get_scalefactors(0.38,0.68,no_frames)
-    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Orbit_through_les_time.txt")
+    # #make file
+    # sfs = utils.get_scalefactors(0.38,0.68,no_frames)
+    # utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Orbit_through_les_time.txt")
