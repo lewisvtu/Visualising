@@ -5,7 +5,7 @@ from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from numpy import pi  
-from scipy.interpolate import UnivariateSpline
+from scipy.interpolate import UnivariateSpline, interp1d
 
 Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.17,
                      0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
@@ -29,6 +29,18 @@ def gen_flight_file(frames, sfs, coords, basis_vects, fname):
     #print setspace
     np.savetxt(fname, setspace.T, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f", header="RefL0100N1504" )
 
+class Interp3D(object):
+	def __init__(self, bundle):
+		fks, xks, yks, zks = np.transpose(bundle)
+		self.x_interp = interp1d(fks, xks, fill_value="extrapolate")
+		self.y_interp = interp1d(fks, yks, fill_value="extrapolate")
+		self.z_interp = interp1d(fks, zks, fill_value="extrapolate")
+
+	def __call__(self, frames):
+		xs = self.x_interp(frames)
+		ys = self.y_interp(frames)
+		zs = self.z_interp(frames)
+		return np.asarray([xs, ys, zs]).T
 
 class Spline3D:
     '''
