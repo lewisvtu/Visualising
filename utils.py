@@ -101,9 +101,12 @@ def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True
 		(0, 0, 0, 1)
 
 		])
+
+
 	if inv:
 		M_world_camera = np.linalg.inv(M_world_camera)
 	coords_in_cam = np.dot(M_world_camera, coords_none_trans)
+
 	if not homog:
 		coords_in_cam = coords_in_cam[:-1,:]
 	if tran:
@@ -131,6 +134,8 @@ def perspective_transfomation(coords_in_cam, region):
 		(0,0,(-near-far)/(near-far), (2*near*far)/(near-far)),
 		(0,0,1,0)
 	])
+
+	#to clip aything out of the region on z 
 
 
 
