@@ -21,41 +21,45 @@ Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.
 #SQL to grab from the database 
 SQL = """
     SELECT
+    	PROG.GalaxyID as ID,
+    	PROG.DescendantID as DesID,
         DES.GalaxyID,
         PROG.SnapNum,
-        PROG.MassType_Star,
+        PROG.MassType_DM,
         (PROG.CentreOfPotential_x * %0.5f) as x,
         (PROG.CentreOfPotential_y * %0.5f) as y,
         (PROG.CentreOfPotential_z * %0.5f) as z,
         PROG.Redshift
     FROM
         RefL0025N0376_Subhalo as PROG with(forceseek),
-        RefL0025N0376_Subhalo as DES,
-        RefL0025N0376_Aperture as AP
+        RefL0025N0376_Subhalo as DES
+
     WHERE
         DES.SnapNum = 28 and
-        DES.MassType_Star > 1.0e10 and
         DES.MassType_DM > 1.0e11 and
-        PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
-        AP.ApertureSize = 30 and
-        AP.GalaxyID = DES.GalaxyID and
-        AP.Mass_Star > 1.0e10
+        PROG.GalaxyID between DES.GalaxyID and DES.LastProgID 
+
     ORDER BY
         PROG.GalaxyID,
         PROG.SnapNum
 """ % (h,h,h)
+#        PROG.MassType_DM > 1.0e11 and
+txt_name = "allProgsTest_"
+filename = "allProgs5_DBS.p"
 
-txt_name = "orbitThroughTime_"
-filename = "smallSim_DBS.p"
-
-raw_dbs = dbsPull(SQL, filename)
-shelf.push(raw_dbs, "smallSim_DBS")
-dbs_data = shelf.pull("smallSim_DBS")
-
-#print dbs_data
-#assert False 
+dbs_data = dbsPull(SQL, filename)
 
 strt = timer()
+
+
+
+
+
+
+#print dbs_data['ID'], dbs_data['DesID']
+#assert False 
+
+
 
 def galsTree(dbs_data):
 	#creates a dictionary of all the galaxies and all there snapshots 
@@ -87,7 +91,7 @@ def orderGals(gals, snapshot_num):
 
 
 
-def story_board(txt_name, path_file, snaps):
+def story_board(txt_name, path_file):
 
 	''' This function returns '''
 
@@ -110,8 +114,8 @@ def story_board(txt_name, path_file, snaps):
 		z_bas = z_basis[i]
 		scale_factor = ts[i]
 
-		All_galaxies = utils.galaxy_interpolation(scale_factor, dbs_data, snaps)
-
+		All_galaxies = utils.gal_interpolation(scale_factor, dbs_data)
+		#print All_galaxies
 		galaxies_trans = coord_transform(x_bas, y_bas, z_bas, cam_position, All_galaxies[:,[3,4,5]])
 
 		galaxies_afterT = np.transpose(galaxies_trans)
@@ -132,7 +136,7 @@ def story_board(txt_name, path_file, snaps):
 
 
 			perspec = 1./galaxZs**2
-			perspec *= (galZsMass)**0.4
+			perspec *= (galZsMass)**0.333
 			perspec.shape = (1, len(perspec))
 
 
@@ -145,7 +149,7 @@ def story_board(txt_name, path_file, snaps):
 			plt.ylim( -1., 1.)
 			plt.xlim( - 1., 1.)
 			plt.imshow(img,extent=[-1.,1.,-1.,1.], aspect='auto')
-			plt.savefig(txt_name + str(i+1))
+			plt.savefig(txt_name + str(i))
 			plt.clf()
 
 		else:
@@ -157,10 +161,10 @@ def story_board(txt_name, path_file, snaps):
 
 
 
-gals = galsTree(dbs_data)
-snaps = orderGals(gals, 1)
+# gals = galsTree(dbs_data)
+# snaps = orderGals(gals, 1)
 
-story_board( txt_name, "Orbit_through_time.txt", snaps)
-
+story_board( txt_name, "Orbit_through_les_time.txt")
 stp = timer()
+
 print "time taken: %f" %(stp - strt) 

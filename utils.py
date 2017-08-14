@@ -148,7 +148,7 @@ def perspective_transfomation(coords_in_cam, region):
 	coords[:,3] = coords[:,3]/coords[:,3]
 
 	#clips all galaxies that are not in your field of view
-	coords_alt = np.asarray([np.append(coord, index) for index, coord  in enumerate(coords) if (abs(coord[0]) <= 1) and (abs(coord[1]) <= 1) and abs(coord[2]) <= 2
+	coords_alt = np.asarray([np.append(coord, index) for index, coord  in enumerate(coords) if (abs(coord[0]) <= 1) and (abs(coord[1]) <= 1) and abs(coord[2]) <= 1
 
 		])
 	#print coords_alt 
@@ -222,6 +222,36 @@ def galsTree(dbs_data):
 
 
 
+def gal_interpolation(scale_factor, dbs_data):
+
+	sideSnaps = find_snapnums(scale_factor)
+	beforeSnap, afterSnap = sideSnaps[0], sideSnaps[1]
+
+	#galaxies of the before snapshots
+	# mask_B = np.where(dbs_data['SnapNum'] == beforeSnap) 
+	mask_B = np.where(np.logical_and(dbs_data['SnapNum'] == beforeSnap, dbs_data['MassType_DM'] >= 1e11))
+	beforeGals = dbs_data[mask_B] 
+
+	mask_After = np.where(np.in1d( dbs_data['ID'], beforeGals['DesID']))
+	afterGals = dbs_data[mask_After]
+
+	if beforeSnap == afterSnap:
+		interpGals = np.asarray([ beforeGals['ID'],beforeGals['SnapNum'],beforeGals['MassType_DM'],(beforeGals['x']),
+								(beforeGals['y']),(beforeGals['z']),beforeGals['Redshift']]).T
+	else:
+		delta_x = afterGals['x'] - beforeGals['x']
+		delta_y = afterGals['y'] - beforeGals['y']
+		delta_z = afterGals['z'] - beforeGals['z']
+		delta_coords = np.array([delta_x,delta_y,delta_z]).T
+		delta_time =  scale_factor - Expansion_F_snaps[beforeSnap]
+		fracTime = delta_time / (Expansion_F_snaps[afterSnap] - Expansion_F_snaps[beforeSnap])
+		fracCoords = delta_coords * fracTime
+
+		interpGals = np.asarray([ beforeGals['ID'],beforeGals['SnapNum'],beforeGals['MassType_DM'],(beforeGals['x']+fracCoords[:,0]),
+								(beforeGals['y']+fracCoords[:,1]),(beforeGals['z']+fracCoords[:,2]),beforeGals['Redshift']]).T
+
+	return interpGals
+
 
 def galaxy_interpolation(scale_factor, dbs_data, snaps):
 	#gals is all snaps dictionary
@@ -248,7 +278,7 @@ def galaxy_interpolation(scale_factor, dbs_data, snaps):
 		beforeGalsS = beforeGalsS[beforeGalsS[:,0].argsort()]
 		#print beforeGalsS
 		delta_coords = afterGalsS[:,3:6] - beforeGalsS[:,3:6]
-		delta_time = Expansion_F_snaps[afterSnap] - scale_factor
+		delta_time =  scale_factor - Expansion_F_snaps[beforeSnap]
 
 		fracTime = delta_time / (Expansion_F_snaps[afterSnap] - Expansion_F_snaps[beforeSnap])
 		fracCoords = delta_coords * fracTime
