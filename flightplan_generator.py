@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import utils
-from utils import coord_transform, cross_basis, orthonormalise, Spline3D
+from utils import coord_transform, cross_basis, orthonormalise, Spline3D, Interp3D
 
 
 class SplinePath(object):
@@ -17,19 +17,24 @@ class SplinePath(object):
             k [0,1,2,3,4]: spline smoothing factor, defined by scipy'''
         self.spline = Spline3D(knowns, k)
 
-    def __call__(self, frame_set):
+    def __call__(self, frame_set, mdf=False):
         '''get coords for new frame value/s
         Args:
             frames [real/s]: frame number/s to generate coords for
         Returns:
             coords [array]: coords of new frames [x,y,z]'''
-        return self.spline(frame_set)
+        if mdf:
+            frame_set = frame_set[:,0]
+        coords = self.spline(frame_set)
+        #print "spline path call"
+        #print np.c_[frame_set, coords]
+        return coords
 
 class OrbitalPath(object):
     '''Creates coords mapping to a circular_path about a target coord
     Coords are initial generated in the orbital planes frame of reference,
     then transformed in to world coords'''
-    def __init__(self, centre, plane_normal, rad_vel, rpf,
+    def __init__(self, centre_bundle, plane_normal, rad_vel, rpf,
                  rad_off, rev_off, helix_vel=0, helix_off=0):
         '''sets up the arguments for the orbital path
         Args:
@@ -39,7 +44,6 @@ class OrbitalPath(object):
             rpf [real]: angular velocity in revolutions per frame
             rev_off [real]: angular offset of the start of the orbital path, in units of
                 revolution'''
-        self.centre = centre
         self.norm = plane_normal / np.linalg.norm(plane_normal)
         self.ang_vel = 2*np.pi*rpf
         self.ang_off = 2*np.pi*rev_off
@@ -48,6 +52,7 @@ class OrbitalPath(object):
         self.hel_vel = helix_vel
         self.hel_off = helix_off
         self.basis = self.get_plane_basis(self.norm)
+        self.centre_func = Interp3D(centre_bundle)
 
 
     def get_plane_basis(self, plane_normal):
@@ -67,18 +72,32 @@ class OrbitalPath(object):
         basis_2 = np.cross(basis_1, plane_normal)
         return np.asarray([basis_1, basis_2, plane_normal])
 
-    def __call__(self, frame_set):
+    def __call__(self, frame_set, mdf=False):
+        #print frame_set
+        if mdf:
+            frame_set = frame_set[:,0]
+        frame_set = np.asarray(frame_set)
         thetas = frame_set * self.ang_vel + self.ang_off
         radii = frame_set * self.rad_vel + self.rad_off
         #coords in obital axis frame
         frame_xs = radii     * np.cos(thetas)
         frame_ys = radii     * np.sin(thetas)
         frame_zs = frame_set * self.hel_vel + self.hel_off
-        frame_coords = np.asarray([frame_xs, frame_ys, frame_zs])
+        frame_coords = np.asarray([frame_set, frame_xs, frame_ys, frame_zs]).T
         #transform in to world coords
-        world_coords = coord_transform(self.basis[0], self.basis[1], self.basis[2],
-                                       self.centre, frame_coords, inv=False, homog=False, tran=True)
-        return np.asarray(world_coords)
+        world_coords = []
+        for bundle in np.atleast_2d(frame_coords):
+            centre = self.centre_func(bundle[0])
+            frame_coord = bundle[1:]
+            frame_coord.shape = (3,1)
+            centre.shape = 3
+            world_coords.append(coord_transform(self.basis[0], self.basis[1], self.basis[2],
+                                       centre, frame_coord, inv=False, homog=False, tran=True))
+        world_coords = np.asarray(world_coords)
+        world_coords.shape = (len(world_coords), 3)
+        #print "obital path call"
+        #print np.c_[frame_set, world_coords]
+        return world_coords
 
 def vector_derivs(frame_set, path_function, d_frame=0.01):
     '''Calculates the vector derivatives/ tangents to the path.
@@ -91,7 +110,7 @@ def vector_derivs(frame_set, path_function, d_frame=0.01):
         derivs [array]: array of tangent vectors, [dx,dy,dz] normalised'''
     derivs = np.zeros((len(frame_set), 3))
     for index in range(len(frame_set)):
-        frame_no = np.asarray([frame_set[index]])
+        frame_no = frame_set[index]
         derivs[index] = path_function(frame_no + d_frame/2) - path_function(frame_no - d_frame/2)
     derivs /= np.linalg.norm(derivs, axis=1)[:, None]
     return derivs
@@ -107,42 +126,79 @@ def look_at_vectors(path_coords, target_coords):
     look_dirs /= np.linalg.norm(look_dirs, axis=1)[:, None]
     return look_dirs
 
+class CombinedPath(object):
+    def __init__(self, func_domain):
+        self.func_domain = func_domain
+        #print self.func_domain[:,1]
+
+    def __call__(self, frames):
+        conditions = []
+        frames = np.atleast_1d(frames)
+        for dom, func in self.func_domain:
+            dom_mask = (frames >= dom[0]) * (frames < dom[1])
+            conditions.append(dom_mask)
+        frames = np.asarray([list(frames)]*3, dtype="f8").T
+        out = np.piecewise(frames, conditions, self.func_domain[:,1], mdf=True)
+        print out
+        return out
+
+
 
 if __name__ == "__main__":#
     print "Actually started running -_- z z z"
     no_frames = 30
-    gal1_coords = [11.2204,16.5994,12.0005]
-    #gal1_coords = np.asarray([0., 0., 0.])
+    #gal1_coords = [11.2204,16.5994,12.0005]
+    gal1_coords = np.asarray([0., 0., 0.])
     test_coords = [
         [0, 0, 0],
         [10, 0, 0]
     ]
-
-    path = OrbitalPath(gal1_coords, [0, 0, 1], 0, 0.25/30, 5, 0, 0, 0)
-    frames = np.arange(no_frames)
-    look_pos = np.tile(gal1_coords, (no_frames,1))
-    path_coords = path(frames)
-    basis_3 = look_at_vectors(path_coords, look_pos)
-    tangents = vector_derivs(frames, path)
-    basis_1 = orthonormalise(tangents, basis_3)
-    basis_2 = cross_basis(basis_3, basis_1)
-
-    # frames = np.arange(60)
-    # look_pos = np.asarray([[0,0,0]]*30 + [[10,0,0]]*30)
-    # first_path = OrbitalPath(test_coords[0], [1,0,0], -5/20, 2/30, 5, 0, -3/20, 0)
-    # sec_path = OrbitalPath(test_coords[1], [-1,0,0], 5/20, 2/30, 5, 0, -3/20, )
-
-    # first_set = np.c_[frames[:20], first_path(frames[:20])]
-    # sec_set = np.c_[frames[-20:], sec_path(frames[-20:])]
-    # tot_set = np.r_[first_set, sec_set]
-    # path = sec_path
+    
+    # frames = np.arange(no_frames)
+    # centre_bundle = np.c_[frames, [gal1_coords]*no_frames]
+    # path = OrbitalPath(centre_bundle, [0, 1, 1], 0, 0.25/30, 5, 0, 0, 0)
+    # look_pos = np.tile(gal1_coords, (no_frames,1))
     # path_coords = path(frames)
-    # print path_coords
 
     # basis_3 = look_at_vectors(path_coords, look_pos)
     # tangents = vector_derivs(frames, path)
     # basis_1 = orthonormalise(tangents, basis_3)
     # basis_2 = cross_basis(basis_3, basis_1)
+
+    frames = np.arange(60)
+    look_pos = np.asarray([[0,0,0]]*30 + [[10,0,0]]*30)
+    first_centre_bundle = np.c_[frames[:20], [test_coords[0]]*20]
+    sec_centre_bundle = np.c_[frames[-20:], [test_coords[1]]*20]
+    first_path = OrbitalPath(first_centre_bundle, [0,-1,-1], 0, 2/30, 3, 0, 0, 0)
+    sec_path = OrbitalPath(sec_centre_bundle, [1,0,1], 0, 2/30, 3, 0, 0, 0)
+
+    first_set = np.c_[frames[:20], first_path(frames[:20])]
+    sec_set = np.c_[frames[-20:], sec_path(frames[-20:])]
+    spl_set = np.r_[first_set[-7:], sec_set[:7]]
+    spl_path = SplinePath(spl_set)
+
+
+    piecewise = np.asarray([
+        [(17,43), spl_path],
+        [(-1,20), first_path],
+        [(40,61), sec_path]
+
+    ])
+    comb = CombinedPath(piecewise)
+    path = comb
+    print "computing path coords -------"
+    path_coords = path(np.arange(60, dtype="f8"))
+    print "computing cam basis -------"
+    # basis_3 = look_at_vectors(path_coords, look_pos)
+    # tangents = vector_derivs(frames, path)
+    # basis_1 = orthonormalise(tangents, basis_3)
+    # basis_2 = cross_basis(basis_3, basis_1)
+
+    basis_3 = vector_derivs(frames, path)
+    temp = np.asarray([[1,0,0]]*60)
+    basis_1 = orthonormalise(temp, basis_3)
+    basis_2 = cross_basis(basis_3, basis_1)
+
     #Plotting bits
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
@@ -159,4 +215,5 @@ if __name__ == "__main__":#
     plt.show()
     #make file
     sfs = utils.get_scalefactors(0.44,0.6,no_frames)
-    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Orbit_through_les_time.txt")
+    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Paths\Orbit_through_les_time.txt")
+
