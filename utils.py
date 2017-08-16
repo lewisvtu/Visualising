@@ -5,7 +5,7 @@ from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from numpy import pi  
-from scipy.interpolate import UnivariateSpline, interp1d
+from scipy.interpolate import UnivariateSpline, interp1d, spline
 
 Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.17,
                      0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
@@ -48,26 +48,33 @@ class Spline3D:
 
     '''
     def __init__(self, bundle, k=3):
-        '''
-        Creates the Spline object
-        '''
-        fks, xks, yks, zks = np.transpose(bundle)
-        self.x_spline = UnivariateSpline(fks, xks, k=k)
-        self.y_spline = UnivariateSpline(fks, yks, k=k)
-        self.z_spline = UnivariateSpline(fks, zks, k=k)
+		'''
+		Creates the Spline object
+		'''
+		fks, xks, yks, zks = bundle.T
+		self.x_spline = UnivariateSpline(fks, xks, k=k)
+		self.y_spline = UnivariateSpline(fks, yks, k=k)
+		self.z_spline = UnivariateSpline(fks, zks, k=k)
+		# self.fks = fks
+		# self.xks = xks
+		# self.yks = yks
+		# self.zks = zks
 
     def __call__(self, fs):
-        '''
-        Generates new points for given frames
-        Args:
-            fs: New frames to generate points for
-        Returns:
-            [[x,y,z], ...] list of new coords in order of given frames
-        '''
-        xs = self.x_spline(fs)
-        ys = self.y_spline(fs)
-        zs = self.z_spline(fs)
-        return np.transpose(np.asarray([xs, ys, zs]))
+		'''
+		Generates new points for given frames
+		Args:
+			fs: New frames to generate points for
+		Returns:
+			[[x,y,z], ...] list of new coords in order of given frames
+		'''
+		xs = self.x_spline(fs)
+		ys = self.y_spline(fs)
+		zs = self.z_spline(fs)
+		# xs = spline(self.fks, self.xks, fs)
+		# ys = spline(self.fks, self.yks, fs)
+		# zs = spline(self.fks, self.zks, fs)
+		return np.transpose(np.asarray([xs, ys, zs]))
 
 
 class Data():
