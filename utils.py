@@ -11,6 +11,29 @@ Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.
 					 0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
 					 0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
 					 0.91, 1.00])
+def plot_from_file(f_name):
+	fs,sfs,xs,ys,zs,v1xs,v1ys,v1zs,v2xs,v2ys,v2zs,v3xs,v3ys,v3zs = np.loadtxt(f_name, unpack=True)
+	#Plotting bits
+	fig = plt.figure()
+	ax = fig.add_subplot(111, projection="3d")
+	ax.set_xlabel("x")
+	ax.set_ylabel("y")
+	ax.set_zlabel("z")
+	path_coords = np.asarray([xs,ys,zs]).T
+	basis_1 = np.asarray([v1xs,v1ys,v1zs]).T
+	basis_2 = np.asarray([v2xs,v2ys,v2zs]).T
+	basis_3 = np.asarray([v3xs,v3ys,v3zs]).T
+	ax.plot(path_coords[:, 0], path_coords[:, 1], path_coords[:, 2])
+	ax.scatter(path_coords[:, 0], path_coords[:, 1], path_coords[:, 2])
+	ax.quiver(path_coords[:, 0], path_coords[:, 1], path_coords[:, 2],
+				basis_1[:, 0], basis_1[:, 1], basis_1[:, 2], pivot="tail", color="#FF0000")
+	ax.quiver(path_coords[:, 0], path_coords[:, 1] ,path_coords[:, 2],
+				basis_2[:, 0], basis_2[:, 1], basis_2[:, 2], pivot="tail", color="#00FF00")
+	ax.quiver(path_coords[:, 0],path_coords[:, 1],path_coords[:, 2],
+				basis_3[:, 0], basis_3[:, 1], basis_3[:, 2], pivot="tail", color="#0000FF")
+	for x,y,z,f in np.c_[path_coords, fs]:
+		ax.text(x,y,z,f)
+	plt.show()
 
 
 def get_scalefactors(start_sf, end_sf, frames):

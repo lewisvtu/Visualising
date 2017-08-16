@@ -35,7 +35,7 @@ class OrbitalPath(object):
     Coords are initial generated in the orbital planes frame of reference,
     then transformed in to world coords'''
     def __init__(self, centre_bundle, nx,ny,nz, rad_vel, rpf,
-                 rad_off, rev_off, helix_vel=0, helix_off=0):
+                 rad_off, rev_off, helix_vel, helix_off):
         '''sets up the arguments for the orbital path
         Args:
             centre [array]: centre of the orbital path, [x,y,z]
@@ -54,6 +54,7 @@ class OrbitalPath(object):
         self.hel_off = helix_off
         self.basis = self.get_plane_basis(self.norm)
         self.centre_func = Interp3D(centre_bundle)
+        self.init_frame = centre_bundle[0][0]
 
 
     def get_plane_basis(self, plane_normal):
@@ -77,7 +78,7 @@ class OrbitalPath(object):
         #print frame_set
         if mdf:
             frame_set = frame_set[:,0]
-        frame_set = np.asarray(frame_set)
+        frame_set = np.asarray(frame_set) - self.init_frame
         thetas = frame_set * self.ang_vel + self.ang_off
         radii = frame_set * self.rad_vel + self.rad_off
         #coords in obital axis frame
@@ -166,60 +167,44 @@ class CombinedPath(object):
         return out
 
 def gen_look_bundle(t_data, no_frames):
-    look_bundle = np.zeros((no_frames, 6))
+    #print no_frames
+    look_bundle = np.zeros((no_frames, 7))
+    #print look_bundle
     tmp = np.asarray([[no_frames,no_frames,0.,0.,0.]])
-    print t_data, "\n---------\n", tmp
+    #print t_data, "\n---------\n", tmp
     t_data = np.r_[t_data, tmp]
     for index in range(len(t_data) - 1):
         cds, cde, ctgx, ctgy, ctgz = t_data[index]
+        cds, cde = int(cds), int(cde)
         ctg = np.asarray([ctgx,ctgy,ctgz])
         nds, nde, ntgx, ntgy, ntgz = t_data[index+1]
+        nds, nde = int(nds), int(nde)
         ntg = np.asarray([ntgx,ntgy,ntgz])
-        print ctg,ntg
-        look_bundle[cds:nds] = np.r_[ctg,ntg]
+        #print ctg,ntg
+        look_bundle[cds:nds, :6] = np.r_[ctg,ntg]
+        look_bundle[cds:cde, 6] = 1
+        #print cde, nds
+        look_bundle[cde:nds, 6] = np.linspace(1,0,nds-cde)
     return look_bundle
 
-
-if __name__ == "__main__":
-    print "Actually started running -_- z z z"
-    #gal1_coords = [11.2204,16.5994,12.0005]
-    gal1_coords = np.asarray([0., 0., 0.])
-    test_coords = np.asarray([
-        [3.44255, 14.94486, 2.22045],
-        [9.17897, 13.82553, 10.63093],
-        [1,1,1],
-        [5,5,5]
-    ])
-
-    centre_coords = test_coords
-    inp_data = np.asarray([
-    #   [domain], coords at centre of montion                               ,rotaxis,rv,av  ,ro,ao,hv,ho]
-        [-1.,10., centre_coords[0,0], centre_coords[0,1], centre_coords[0,2], 1,2,1, 0, 0.5/10, 5, 1/2, 0, 0],
-        [20.,31., centre_coords[1,0], centre_coords[1,1], centre_coords[1,2], 1,0,1, 0, 0.5/10, 5, 1/4, 0, 0],
-        [45.,61., centre_coords[2,0], centre_coords[2,1], centre_coords[2,2], -0.5,0,1, 0, 0.5/10, 5, 0, 0, 0]
-        #[70.,76., centre_coords[3,0], centre_coords[3,1], centre_coords[3,2], -0.5,0,1, 0, 0.5/10, 5, 0, 0, 0]
-    ])
-
-    targ_data = np.asarray([
-        [0.,10., test_coords[0,0], test_coords[0,1], test_coords[0,2]],
-        [20.,30., test_coords[1,0], test_coords[1,1], test_coords[1,2]],
-        [45.,60., test_coords[2,0], test_coords[2,1], test_coords[2,2]]
-    ])
+def create_flight_path(inp_data, targ_data):
+    no_frames = int(inp_data[-1,1] - 1)
+    print "No of frames: %s" % no_frames
 
     dom = inp_data[:,:2]
     no_frames_each = dom[:,1] - dom[:,0] + 1
-    frames = [np.arange(no_frames) + start for no_frames, start in zip(no_frames_each, dom[:,0])]
+    frames = [np.arange(no_of_frames) + start for no_of_frames, start in zip(no_frames_each, dom[:,0])]
     centre_bundles = [gen_centre_bundle(frame_set, central_coord) for frame_set, central_coord in zip(frames, inp_data[:,2:5])]
     path_functions = [OrbitalPath(centre_bundle, *args) for centre_bundle, args in zip(centre_bundles, inp_data[:, 5:])]
     
     dom_path_pair = np.c_[dom, path_functions]
 
     path = CombinedPath(dom_path_pair)
-    frames = np.arange(60, dtype="f8")
+    frames = np.arange(no_frames, dtype="f8")
 
-    look_pos = gen_look_bundle(targ_data,60)
-    print look_pos
-    weights = np.asarray([1] * 10 + list(np.linspace(1,0,10)) + [1] * 10 + [1] * 10 + list(np.linspace(1,0,10)) + [1] * 10 )
+    look_pos = gen_look_bundle(targ_data,no_frames)
+    weights = look_pos[:,-1]
+    look_pos = look_pos[:,:-1]
     #print look_pos, "\n----------\n", weights, "\n-----------\n"
 
     print "computing path coords -------"
@@ -231,25 +216,39 @@ if __name__ == "__main__":
     basis_1 = orthonormalise(tangents, basis_3)
     basis_2 = cross_basis(basis_3, basis_1)
 
-    #Plotting bits
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="3d")
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_zlabel("z")
-    ax.plot(path_coords[:, 0], path_coords[:, 1], path_coords[:, 2])
-    ax.scatter(path_coords[:, 0], path_coords[:, 1], path_coords[:, 2])
-    ax.scatter(test_coords[:, 0], test_coords[:, 1], test_coords[:, 2])
-    ax.quiver(path_coords[:, 0], path_coords[:, 1], path_coords[:, 2],
-              basis_1[:, 0], basis_1[:, 1], basis_1[:, 2], pivot="tail", color="#FF0000")
-    ax.quiver(path_coords[:, 0], path_coords[:, 1] ,path_coords[:, 2],
-              basis_2[:, 0], basis_2[:, 1], basis_2[:, 2], pivot="tail", color="#00FF00")
-    ax.quiver(path_coords[:, 0],path_coords[:, 1],path_coords[:, 2],
-              basis_3[:, 0], basis_3[:, 1], basis_3[:, 2], pivot="tail", color="#0000FF")
-    for x,y,z,f in np.c_[path_coords, frames]:
-        ax.text(x,y,z,f)
-    plt.show()
-    #make file
-    # sfs = utils.get_scalefactors(0.5,0.6,no_frames)
-    # utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Paths\combined_path.txt")
+    sfs = utils.get_scalefactors(0.5,0.6,no_frames)
+    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Paths\weave.txt")
+    return True
+
+
+
+
+if __name__ == "__main__":
+    print "Actually started running -_- z z z"
+    test_coords = np.asarray([
+        [3.578510046005249, 9.612491607666016, 7.581663131713867],
+        [16.105289459228516, 15.10133171081543, 12.365381240844727],
+        [1,1,1],
+        [5,5,5]
+    ])
+
+    
+
+    centre_coords = test_coords
+    inp_data = np.asarray([
+    #   [domain], coords at centre of montion                               ,rotaxis,rv,    av  ,ro,ao,hv,ho]
+        [-1.,10., centre_coords[0,0], centre_coords[0,1], centre_coords[0,2], 0,1,-1,  0, -0.5/10, 3, -1/4, 0, 0],
+        [20.,31., centre_coords[1,0], centre_coords[1,1], centre_coords[1,2], 0,1,-1,  0, 0.75/10, 3, 0, 0, 0]
+        #[45.,60., centre_coords[2,0], centre_coords[2,1], centre_coords[2,2], 1,1,1, 0, 0.5/10, 5, 0, 0, 0],
+        #[70.,76., centre_coords[3,0], centre_coords[3,1], centre_coords[3,2], 1,1,1, 0, 0.5/10, 5, 0, 0, 0]
+    ])
+
+    targ_data = np.asarray([
+        [0,10, test_coords[0,0], test_coords[0,1], test_coords[0,2]],
+        [20,30, test_coords[1,0], test_coords[1,1], test_coords[1,2]]
+        #[45,60, test_coords[2,0], test_coords[2,1], test_coords[2,2]],
+        #[70,75, test_coords[3,0], test_coords[3,1], test_coords[3,2]]
+    ])
+
+    create_flight_path(inp_data, targ_data)
 

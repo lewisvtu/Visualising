@@ -21,7 +21,7 @@ SQL = """
         PROG.SnapNum = 28 and
         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
         AP.GalaxyID = DES.GalaxyID and
-        DES.GroupNumber IN (0, 5) and
+        DES.GroupNumber IN (2,4) and
         DES.SubGroupNumber = 0
 
 """ % (h,h,h)
