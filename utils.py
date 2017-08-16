@@ -8,26 +8,26 @@ from numpy import pi
 from scipy.interpolate import UnivariateSpline, interp1d, spline
 
 Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.17,
-                     0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
-                     0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
-                     0.91, 1.00])
+					 0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
+					 0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
+					 0.91, 1.00])
 
 
 def get_scalefactors(start_sf, end_sf, frames):
-    '''
-    returns list of #frames scale factors scaled uniformly in log10 between start_sf and end_sf
-    '''
-    array_log_sf = np.linspace(np.log10(start_sf), np.log10(end_sf), frames)
-    array_sf = np.power(10, array_log_sf)
-    return array_sf
+	'''
+	returns list of #frames scale factors scaled uniformly in log10 between start_sf and end_sf
+	'''
+	array_log_sf = np.linspace(np.log10(start_sf), np.log10(end_sf), frames)
+	array_sf = np.power(10, array_log_sf)
+	return array_sf
 
 def gen_flight_file(frames, sfs, coords, basis_vects, fname):
-    setspace = np.asarray([frames, sfs, coords[:,0]       , coords[:,1]       , coords[:,2],
+	setspace = np.asarray([frames, sfs, coords[:,0]       , coords[:,1]       , coords[:,2],
 										basis_vects[0,:,0], basis_vects[0,:,1], basis_vects[0,:,2],
 										basis_vects[1,:,0], basis_vects[1,:,1], basis_vects[1,:,2],
 										basis_vects[2,:,0], basis_vects[2,:,1], basis_vects[2,:,2]])
-    #print setspace
-    np.savetxt(fname, setspace.T, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f", header="RefL0100N1504" )
+	#print setspace
+	np.savetxt(fname, setspace.T, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f", header="RefL0100N1504" )
 
 class Interp3D(object):
 	def __init__(self, bundle):
@@ -78,35 +78,35 @@ class Spline3D:
 
 
 class Data():
-    def __init__(self, sql_query, f_name):
-        self.dbs_data = dbsPull(sql_query, f_name)
-    
-    def galaxies_from_ids(self, interesting_ids):
-        '''
-        gives useful galaxy data for interesting ids and snapshots, in a useful form
+	def __init__(self, sql_query, f_name):
+		self.dbs_data = dbsPull(sql_query, f_name)
+	
+	def galaxies_from_ids(self, interesting_ids):
+		'''
+		gives useful galaxy data for interesting ids and snapshots, in a useful form
 
-        Args:
-            interesting_ids [dictionary]: Maps keys of galaxyID to values of snapshots
-        
-        Returns:
-            interesting_gals [array]: [sf,x,y,z] for each galaxy in interesting_gals
-        '''
-        interesting_gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
-        interesting_gals[:,-1] = 1.0 / (1.0 + interesting_gals[:,-1])
-        gals = gals[np.argsort(gals[:,3])]
-        gals = gals[:,[3,0,1,2]]
-        return interesting_gals
+		Args:
+			interesting_ids [dictionary]: Maps keys of galaxyID to values of snapshots
+		
+		Returns:
+			interesting_gals [array]: [sf,x,y,z] for each galaxy in interesting_gals
+		'''
+		interesting_gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
+		interesting_gals[:,-1] = 1.0 / (1.0 + interesting_gals[:,-1])
+		gals = gals[np.argsort(gals[:,3])]
+		gals = gals[:,[3,0,1,2]]
+		return interesting_gals
 
 
 def orthonormalise(new_vects, basis_1):
-    basis_2 = new_vects - (np.einsum("ij,ij->i", new_vects, basis_1) * basis_1.T).T
-    basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
-    return basis_2
+	basis_2 = new_vects - (np.einsum("ij,ij->i", new_vects, basis_1) * basis_1.T).T
+	basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
+	return basis_2
 
 def cross_basis(basis_1, basis_2):
-    basis_3 = np.cross(basis_1, basis_2)
-    basis_3 = basis_3 / np.linalg.norm(basis_3, axis=1)[:,None]
-    return basis_3    
+	basis_3 = np.cross(basis_1, basis_2)
+	basis_3 = basis_3 / np.linalg.norm(basis_3, axis=1)[:,None]
+	return basis_3    
 
 def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True, tran=False):
 	if tran:
@@ -133,8 +133,8 @@ def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True
 	return coords_in_cam
 
 def find_nearest(array,value):
-    idx = (np.abs(array-value)).argmin()
-    return array[idx]
+	idx = (np.abs(array-value)).argmin()
+	return array[idx]
 
 def perspective_transfomation(coords_in_cam, region):
 
@@ -167,11 +167,15 @@ def perspective_transfomation(coords_in_cam, region):
 	coords[:,3] = coords[:,3]/coords[:,3]
 
 	#clips all galaxies that are not in your field of view
-	coords_alt = np.asarray([np.append(coord, index) for index, coord  in enumerate(coords) if (abs(coord[0]) <= 1) and (abs(coord[1]) <= 1) and abs(coord[2]) <= 1
-
+	coords_alt = np.asarray([np.append(coord, index) for index, coord  in enumerate(coords) if (abs(coord[0]) <= 1) and (abs(coord[1]) <= 1) and abs(coord[2]) <= 1.
 		])
-	#print coords_alt 
-
+	# mask = np.where(np.logical_and(np.logical_and(np.logical_and(np.logical_and(np.logical_and(
+	# 		coords[:,0] <= 1, coords[:,0] >=-1),
+	# 		coords[:,1]<=1), coords[:,1]>=-1),
+	# 		coords[:,2]<=1), coords[:,2]>=-1))
+	# coords_alt = coords[mask]
+	# print coords_alt.T 
+	# print coords_alt2
 	# w_s         = region[0]
 	# h_s         = region[1]
 	# s_x         = 0.0
@@ -182,18 +186,19 @@ def perspective_transfomation(coords_in_cam, region):
 	# 						(0,0,(far-near)/2.,(near+far)/2.),
 	# 						(0,0,0,0)])
 	# coords      = np.dot(M_viewport, coords_alt.T)
+	# print coords
 
 
-
+	#return M_viewport
 	return coords_alt
 
 
 def find_snapnums(scale_factor):
 
 	Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.17,
-	                     0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
-	                     0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
-	                     0.91, 1.00])
+						 0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
+						 0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
+						 0.91, 1.00])
 
 	nearest_snapnumber = (np.abs(Expansion_F_snaps - scale_factor)).argmin()
 	if Expansion_F_snaps[nearest_snapnumber] == scale_factor:
@@ -213,31 +218,31 @@ def find_snapnums(scale_factor):
 
 def orderGals_all(dbs_data, snapshot_num):
 
-    snaps = {}
-    for galID in gals.keys()[:]:
-        gal = gals[galID]
+	snaps = {}
+	for galID in gals.keys()[:]:
+		gal = gals[galID]
 
-        for galsnap in gal:
-            if galsnap[1] not in snaps.keys():
-                snaps[galsnap[1]] = [galsnap]
-            else: 
-                snaps[galsnap[1]].append(galsnap)
+		for galsnap in gal:
+			if galsnap[1] not in snaps.keys():
+				snaps[galsnap[1]] = [galsnap]
+			else: 
+				snaps[galsnap[1]].append(galsnap)
 
-    return snaps
+	return snaps
 
 
 
 def galsTree(dbs_data):
 	#creates a dictionary of all the galaxies and all there snapshots 
-    gals = {}
-    for ele in dbs_data:
-      galID = ele[0]
-      if galID in gals.keys():
-          gals[galID].append([ele[i] for i in range(0, len(ele))])
-      else:
-          gals[galID] = [[ele[i] for i in range(0, len(ele))]]
+	gals = {}
+	for ele in dbs_data:
+	  galID = ele[0]
+	  if galID in gals.keys():
+		  gals[galID].append([ele[i] for i in range(0, len(ele))])
+	  else:
+		  gals[galID] = [[ele[i] for i in range(0, len(ele))]]
 
-    return gals  
+	return gals  
 
 
 
@@ -310,7 +315,32 @@ def galaxy_interpolation(scale_factor, dbs_data, snaps):
 
 
 
+def get_centre(basis_vectors, cam_position, region):
+	""" Return centre as seen from the camera. """
+	bv = basis_vectors
+	M = np.array([(bv[0][0], bv[1][0], bv[2][0], cam_position[0]),
+				  (bv[0][1], bv[1][1], bv[2][1], cam_position[1]),
+				  (bv[0][2], bv[1][2], bv[2][2], cam_position[2]),
+				  (0,0,0,1)])
+	return np.dot(M, np.array([0,0,region[2]/2.,1]))[:-1]
 
+
+def periodic_wrap(pos, boxsize, centre=None):
+	"""
+	Wrap the coordinates in pos to the periodic copy nearest centre
+	assuming box size boxsize. Coordinates may be more than one
+	boxsize away from centre.
+
+	Method is to shift coords such that centre is at 0.5*boxsize,
+	use numpy.mod to wrap coordinates into range 0-boxsize, then shift
+	back.
+
+	If centre is None just wrap into range 0-boxsize.
+	"""
+	if centre is None:
+		return np.mod(pos, boxsize)
+	else:
+		return np.mod(pos-centre+0.5*boxsize, boxsize)+centre-0.5*boxsize
 
 # xyz = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
 
