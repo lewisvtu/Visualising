@@ -205,6 +205,8 @@ def perspective_transfomation(coords_in_cam, region):
 	#clips all galaxies that are not in your field of view
 	coords_alt = np.asarray([np.append(coord, index) for index, coord  in enumerate(coords) if (abs(coord[0]) <= 1) and (abs(coord[1]) <= 1) and abs(coord[2]) <= 1.
 		])
+
+	#to transform back into distances rather than normalized, not currently functional
 	# mask = np.where(np.logical_and(np.logical_and(np.logical_and(np.logical_and(np.logical_and(
 	# 		coords[:,0] <= 1, coords[:,0] >=-1),
 	# 		coords[:,1]<=1), coords[:,1]>=-1),
@@ -231,6 +233,16 @@ def perspective_transfomation(coords_in_cam, region):
 
 def find_snapnums(scale_factor):
 
+	''' 
+	This function will give the snapnumbers either side of a given scale factor
+	Args:
+		scale_factor: The expnsion factor of interest, this is  1/(redshift+1)
+
+	Returns: A list of two values in the form [beforeSnap, AfterSnap] where 
+			beforeSnap and AfterSnap are the snapshot numbers before and after the given scalefactor respectively
+
+	'''
+
 	Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.17,
 						 0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
 						 0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
@@ -251,6 +263,7 @@ def find_snapnums(scale_factor):
 
 	return [beforeSnap, afterSnap]	
 
+
 def gal_interpolation(scale_factor, dbs_data):
 
 	sideSnaps = find_snapnums(scale_factor)
@@ -263,6 +276,9 @@ def gal_interpolation(scale_factor, dbs_data):
 
 	mask_After = np.where(np.in1d( dbs_data['ID'], beforeGals['DesID']))
 	afterGals = dbs_data[mask_After]
+
+	mask_c = np.where(np.in1d( afterGals['ID'],beforeGals['DesID']))
+	beforeGals = beforeGals[mask_c]
 
 	if beforeSnap == afterSnap:
 		interpGals = np.asarray([ beforeGals['ID'],beforeGals['SnapNum'],beforeGals['MassType_DM'],(beforeGals['x']),
@@ -307,6 +323,3 @@ def periodic_wrap(pos, boxsize, centre=None):
 		return np.mod(pos, boxsize)
 	else:
 		return np.mod(pos-centre+0.5*boxsize, boxsize)+centre-0.5*boxsize
-
-# xyz = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
-
