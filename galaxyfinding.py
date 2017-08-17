@@ -21,15 +21,15 @@ SQL = """
         PROG.SnapNum = 28 and
         PROG.GalaxyID between DES.GalaxyID and DES.TopLeafID and
         AP.GalaxyID = DES.GalaxyID and
-        DES.GroupNumber IN (1) and
+        DES.GroupNumber IN (2,4) and
         DES.SubGroupNumber = 0
 
 """ % (h,h,h)
 
 # Grabs new data from db based on sql. If file name already exists, it loads that data instead
 
-filename = "aBigThing.p"
+filename = "BigThing.p"
 
-raw_dbs = dbsPull(SQL, filename, make=False)
+raw_dbs = dbsPull(SQL, filename, make=False, search=False)
 
-print raw_dbs["id"]
+print raw_dbs
