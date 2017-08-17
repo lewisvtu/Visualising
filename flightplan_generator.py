@@ -11,18 +11,21 @@ class SplinePath(object):
     '''Spline paths that stitch together general paths'''
     def __init__(self, knowns, k=3):
         '''Args:
-            frame_set [reals]: set of frame numbers associated with the coordinates, used to
-                generate the spline
-            knowns [array]: set of known values, [frame,x,y,z]
-            k [0,1,2,3,4]: spline smoothing factor, defined by scipy'''
+            knowns [array]: numpy array of containing, for each coordinate on the known line,
+                [f,x,y,z] for frame number f, and coord [x,y,z]
+            k [real < 5]: smoothing factor defined by scipy
+                 '''
         self.spline = Spline3D(knowns, k)
 
     def __call__(self, frame_set, mdf=False):
-        '''get coords for new frame value/s
+        '''generate the coordinates for given frame numbers
         Args:
-            frames [real/s]: frame number/s to generate coords for
+            frame_set [array/real]: frame number/s to calculate the new coords for
+            mdf (optional) [bool]: if the frames given are multidimentional, take only the 
+                first column. Blame numpy.piecewise for requiring the same array sizes for
+                input and output >:|
         Returns:
-            coords [array]: coords of new frames [x,y,z]'''
+            coords [array]: numpy array of coords [x,y,z] for new frame numbers '''
         if mdf:
             frame_set = frame_set[:,0]
         coords = self.spline(frame_set)
@@ -31,19 +34,21 @@ class SplinePath(object):
         return coords
 
 class OrbitalPath(object):
-    '''Creates coords mapping to a circular_path about a target coord
-    Coords are initial generated in the orbital planes frame of reference,
-    then transformed in to world coords'''
+    '''Generates paths central to a set of points, typically orbits, spirals of helical paths'''
     def __init__(self, centre_bundle, nx,ny,nz, rad_vel, rpf,
                  rad_off, rev_off, helix_vel, helix_off):
         '''sets up the arguments for the orbital path
         Args:
-            centre [array]: centre of the orbital path, [x,y,z]
-            plane_normal [array]: vector [x,y,z] in the normal to the orbital plane
-            rad [real]: radius of orbital path
-            rpf [real]: angular velocity in revolutions per frame
-            rev_off [real]: angular offset of the start of the orbital path, in units of
-                revolution'''
+            Centre_bundle [array]: array of frames and the centre positions at those points, used to interpolate
+                the galaxy positions when moving between snapshots
+            nx,ny,nz [reals]: the orbital axis vector in world coord basis, orients the orbital path
+            rad_vel [real]: radial velocity, 0 for circles, negative spiral inwards, positive spiral out, in units 
+                cMpc/h per frame
+            rpf [real]: angular velocity, 0 for lines, any other valuer results in circular path, in units revolution per frame
+            rad_off [real]: starting radius for orbit in units cMpc/h
+            rev_off [real]: starting orbital angle, used to shift the patyh around an orbit, in units revolution
+            helix_vel [real]: velocity in the direction of orbital axis, used to create helical paths. in units cMpc/h per frame
+            helix_off [real]: displacement from the centre in the orbital axis direction, in units cMpc/h'''
         plane_normal = np.asarray([nx,ny,nz])
         self.norm = plane_normal / np.linalg.norm(plane_normal)
         self.ang_vel = 2*np.pi*rpf
@@ -184,7 +189,8 @@ def gen_look_bundle(t_data, no_frames):
         look_bundle[cds:nds, :6] = np.r_[ctg,ntg]
         look_bundle[cds:cde, 6] = 1
         #print cde, nds
-        look_bundle[cde:nds, 6] = np.linspace(1,0,nds-cde)
+        look_bundle[cde:nds, 6] = np.logspace(0,-2,nds-cde)
+        print look_bundle[:, 6]
     return look_bundle
 
 def create_flight_path(inp_data, targ_data):
@@ -216,8 +222,8 @@ def create_flight_path(inp_data, targ_data):
     basis_1 = orthonormalise(tangents, basis_3)
     basis_2 = cross_basis(basis_3, basis_1)
 
-    sfs = utils.get_scalefactors(0.5,0.6,no_frames)
-    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Paths\weave.txt")
+    sfs = utils.get_scalefactors(0.8,1.,no_frames)
+    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Paths\weave_2.txt")
     return True
 
 
@@ -237,17 +243,17 @@ if __name__ == "__main__":
     centre_coords = test_coords
     inp_data = np.asarray([
     #   [domain], coords at centre of montion                               ,rotaxis,rv,    av  ,ro,ao,hv,ho]
-        [-1.,10., centre_coords[0,0], centre_coords[0,1], centre_coords[0,2], 0,1,-1,  0, -0.5/10, 3, -1/4, 0, 0],
-        [20.,31., centre_coords[1,0], centre_coords[1,1], centre_coords[1,2], 0,1,-1,  0, 0.75/10, 3, 0, 0, 0]
-        #[45.,60., centre_coords[2,0], centre_coords[2,1], centre_coords[2,2], 1,1,1, 0, 0.5/10, 5, 0, 0, 0],
-        #[70.,76., centre_coords[3,0], centre_coords[3,1], centre_coords[3,2], 1,1,1, 0, 0.5/10, 5, 0, 0, 0]
+        [-1.,61., centre_coords[0,0], centre_coords[0,1], centre_coords[0,2], 0,1,-3,  0, -3/60, 3, -1/4, 5/60, -5/2]
+        #[50.,81., centre_coords[1,0], centre_coords[1,1], centre_coords[1,2], 4,1,1,  0, 0.75/30, 3, 0, 0, 0]
+        #[100.,130., centre_coords[2,0], centre_coords[2,1], centre_coords[2,2], 1,1,1, 0, 0.5/30, 5, 0, 0, 0],
+        #[140.,156., centre_coords[3,0], centre_coords[3,1], centre_coords[3,2], 1,1,1, 0, 0.5/15, 5, 0, 0, 0]
     ])
 
     targ_data = np.asarray([
-        [0,10, test_coords[0,0], test_coords[0,1], test_coords[0,2]],
-        [20,30, test_coords[1,0], test_coords[1,1], test_coords[1,2]]
-        #[45,60, test_coords[2,0], test_coords[2,1], test_coords[2,2]],
-        #[70,75, test_coords[3,0], test_coords[3,1], test_coords[3,2]]
+        [0,60, test_coords[0,0], test_coords[0,1], test_coords[0,2]]
+        #[50,80, test_coords[1,0], test_coords[1,1], test_coords[1,2]]
+        #[100,130, test_coords[2,0], test_coords[2,1], test_coords[2,2]],
+        #[140,155, test_coords[3,0], test_coords[3,1], test_coords[3,2]]
     ])
 
     create_flight_path(inp_data, targ_data)

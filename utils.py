@@ -11,6 +11,39 @@ Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.
 					 0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
 					 0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
 					 0.91, 1.00])
+
+def get_dbs():
+	SQL = """
+		SELECT
+			PROG.GalaxyID as ID,
+			PROG.DescendantID as DesID,
+			DES.GalaxyID,
+			PROG.SnapNum,
+			PROG.MassType_DM,
+			(PROG.CentreOfPotential_x * %0.5f) as x,
+			(PROG.CentreOfPotential_y * %0.5f) as y,
+			(PROG.CentreOfPotential_z * %0.5f) as z,
+			PROG.Redshift
+		FROM
+			RefL0025N0376_Subhalo as PROG with(forceseek),
+			RefL0025N0376_Subhalo as DES
+
+		WHERE
+			DES.SnapNum = 28 and
+			DES.MassType_DM > 1.0e11 and
+			PROG.GalaxyID between DES.GalaxyID and DES.LastProgID 
+
+		ORDER BY
+			PROG.GalaxyID,
+			PROG.SnapNum
+	""" % (h,h,h)
+	#        PROG.MassType_DM > 1.0e11 and
+	txt_name = "no_images_new_"
+	filename = "allProgs11_DBS.p"
+	boxsize = 25 * h
+	dbs_data = dbsPull(SQL, filename)
+	return dbs_data
+
 def plot_from_file(f_name):
 	fs,sfs,xs,ys,zs,v1xs,v1ys,v1zs,v2xs,v2ys,v2zs,v3xs,v3ys,v3zs = np.loadtxt(f_name, unpack=True)
 	#Plotting bits
@@ -33,7 +66,7 @@ def plot_from_file(f_name):
 				basis_3[:, 0], basis_3[:, 1], basis_3[:, 2], pivot="tail", color="#0000FF")
 	for x,y,z,f in np.c_[path_coords, fs]:
 		ax.text(x,y,z,f)
-	plt.show()
+	return fig
 
 
 def get_scalefactors(start_sf, end_sf, frames):
@@ -64,6 +97,7 @@ class Interp3D(object):
 		ys = self.y_interp(frames)
 		zs = self.z_interp(frames)
 		return np.asarray([xs, ys, zs]).T
+
 
 class Spline3D:
     '''
@@ -100,27 +134,6 @@ class Spline3D:
 		return np.transpose(np.asarray([xs, ys, zs]))
 
 
-class Data():
-	def __init__(self, sql_query, f_name):
-		self.dbs_data = dbsPull(sql_query, f_name)
-	
-	def galaxies_from_ids(self, interesting_ids):
-		'''
-		gives useful galaxy data for interesting ids and snapshots, in a useful form
-
-		Args:
-			interesting_ids [dictionary]: Maps keys of galaxyID to values of snapshots
-		
-		Returns:
-			interesting_gals [array]: [sf,x,y,z] for each galaxy in interesting_gals
-		'''
-		interesting_gals = np.asarray([list(gal)[3:] for gal in dbs_data if gal[0] in interesting_ids.keys() and gal[1] == interesting_ids[gal[0]]])
-		interesting_gals[:,-1] = 1.0 / (1.0 + interesting_gals[:,-1])
-		gals = gals[np.argsort(gals[:,3])]
-		gals = gals[:,[3,0,1,2]]
-		return interesting_gals
-
-
 def orthonormalise(new_vects, basis_1):
 	basis_2 = new_vects - (np.einsum("ij,ij->i", new_vects, basis_1) * basis_1.T).T
 	basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
@@ -134,7 +147,7 @@ def cross_basis(basis_1, basis_2):
 def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True, tran=False):
 	if tran:
 		particles = particles.T
-	coords_none_trans = np.transpose(np.c_[particles, np.ones(len(particles))])
+	coords_none_trans = np.c_[particles, np.ones(len(particles))].T
 	M_world_camera = np.array([
 
 		(x_basis[0], y_basis[0], z_basis[0], cam_position[0]),
@@ -238,37 +251,6 @@ def find_snapnums(scale_factor):
 
 	return [beforeSnap, afterSnap]	
 
-
-def orderGals_all(dbs_data, snapshot_num):
-
-	snaps = {}
-	for galID in gals.keys()[:]:
-		gal = gals[galID]
-
-		for galsnap in gal:
-			if galsnap[1] not in snaps.keys():
-				snaps[galsnap[1]] = [galsnap]
-			else: 
-				snaps[galsnap[1]].append(galsnap)
-
-	return snaps
-
-
-
-def galsTree(dbs_data):
-	#creates a dictionary of all the galaxies and all there snapshots 
-	gals = {}
-	for ele in dbs_data:
-	  galID = ele[0]
-	  if galID in gals.keys():
-		  gals[galID].append([ele[i] for i in range(0, len(ele))])
-	  else:
-		  gals[galID] = [[ele[i] for i in range(0, len(ele))]]
-
-	return gals  
-
-
-
 def gal_interpolation(scale_factor, dbs_data):
 
 	sideSnaps = find_snapnums(scale_factor)
@@ -298,45 +280,6 @@ def gal_interpolation(scale_factor, dbs_data):
 								(beforeGals['y']+fracCoords[:,1]),(beforeGals['z']+fracCoords[:,2]),beforeGals['Redshift']]).T
 
 	return interpGals
-
-
-def galaxy_interpolation(scale_factor, dbs_data, snaps):
-	#gals is all snaps dictionary
-
-	all_raw_data = np.asarray(dbs_data)
-	sideSnaps = find_snapnums(scale_factor)
-	beforeSnap, afterSnap = sideSnaps[0], sideSnaps[1]
-
-	beforeGals = np.asarray(snaps[beforeSnap])
-	afterGals = np.asarray(snaps[afterSnap])
-
-
-	if beforeSnap == afterSnap:
-		return beforeGals
-
-	else:	
-
-		#romoves any galaxies that aren't in both snapshots 
-		afterGalsS = np.asarray([after_gal for after_gal in afterGals if after_gal[0] in beforeGals[:,0]])
-		beforeGalsS = np.asarray([before_gal for before_gal in beforeGals if before_gal[0] in afterGals[:,0]])
-
-		#sort them by the id's so that they are in the same order
-		afterGalsS = afterGalsS[afterGalsS[:,0].argsort()]
-		beforeGalsS = beforeGalsS[beforeGalsS[:,0].argsort()]
-		#print beforeGalsS
-		delta_coords = afterGalsS[:,3:6] - beforeGalsS[:,3:6]
-		delta_time =  scale_factor - Expansion_F_snaps[beforeSnap]
-
-		fracTime = delta_time / (Expansion_F_snaps[afterSnap] - Expansion_F_snaps[beforeSnap])
-		fracCoords = delta_coords * fracTime
-
-		beforeGalsS[:,3:6] = beforeGalsS[:,3:6] + fracCoords
-
-		InterpGals = beforeGalsS
-
-		return InterpGals 
-
-
 
 def get_centre(basis_vectors, cam_position, region):
 	""" Return centre as seen from the camera. """
