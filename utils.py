@@ -162,6 +162,8 @@ def perspective_transfomation(coords_in_cam, region):
 	#clips all galaxies that are not in your field of view
 	coords_alt = np.asarray([np.append(coord, index) for index, coord  in enumerate(coords) if (abs(coord[0]) <= 1) and (abs(coord[1]) <= 1) and abs(coord[2]) <= 1.
 		])
+
+	#to transform back into distances rather than normalized, not currently functional
 	# mask = np.where(np.logical_and(np.logical_and(np.logical_and(np.logical_and(np.logical_and(
 	# 		coords[:,0] <= 1, coords[:,0] >=-1),
 	# 		coords[:,1]<=1), coords[:,1]>=-1),
@@ -188,6 +190,16 @@ def perspective_transfomation(coords_in_cam, region):
 
 def find_snapnums(scale_factor):
 
+	''' 
+	This function will give the snapnumbers either side of a given scale factor
+	Args:
+		scale_factor: The expnsion factor of interest, this is  1/(redshift+1)
+
+	Returns: A list of two values in the form [beforeSnap, AfterSnap] where 
+			beforeSnap and AfterSnap are the snapshot numbers before and after the given scalefactor respectively
+
+	'''
+
 	Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.17,
 						 0.18, 0.20, 0.22, 0.25, 0.29, 0.31, 0.33, 0.37, 0.40,
 						 0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
@@ -209,36 +221,6 @@ def find_snapnums(scale_factor):
 	return [beforeSnap, afterSnap]	
 
 
-def orderGals_all(dbs_data, snapshot_num):
-
-	snaps = {}
-	for galID in gals.keys()[:]:
-		gal = gals[galID]
-
-		for galsnap in gal:
-			if galsnap[1] not in snaps.keys():
-				snaps[galsnap[1]] = [galsnap]
-			else: 
-				snaps[galsnap[1]].append(galsnap)
-
-	return snaps
-
-
-
-def galsTree(dbs_data):
-	#creates a dictionary of all the galaxies and all there snapshots 
-	gals = {}
-	for ele in dbs_data:
-	  galID = ele[0]
-	  if galID in gals.keys():
-		  gals[galID].append([ele[i] for i in range(0, len(ele))])
-	  else:
-		  gals[galID] = [[ele[i] for i in range(0, len(ele))]]
-
-	return gals  
-
-
-
 def gal_interpolation(scale_factor, dbs_data):
 
 	sideSnaps = find_snapnums(scale_factor)
@@ -251,6 +233,9 @@ def gal_interpolation(scale_factor, dbs_data):
 
 	mask_After = np.where(np.in1d( dbs_data['ID'], beforeGals['DesID']))
 	afterGals = dbs_data[mask_After]
+
+	mask_c = np.where(np.in1d( afterGals['ID'],beforeGals['DesID']))
+	beforeGals = beforeGals[mask_c]
 
 	if beforeSnap == afterSnap:
 		interpGals = np.asarray([ beforeGals['ID'],beforeGals['SnapNum'],beforeGals['MassType_DM'],(beforeGals['x']),
@@ -268,44 +253,6 @@ def gal_interpolation(scale_factor, dbs_data):
 								(beforeGals['y']+fracCoords[:,1]),(beforeGals['z']+fracCoords[:,2]),beforeGals['Redshift']]).T
 
 	return interpGals
-
-
-def galaxy_interpolation(scale_factor, dbs_data, snaps):
-	#gals is all snaps dictionary
-
-	all_raw_data = np.asarray(dbs_data)
-	sideSnaps = find_snapnums(scale_factor)
-	beforeSnap, afterSnap = sideSnaps[0], sideSnaps[1]
-
-	beforeGals = np.asarray(snaps[beforeSnap])
-	afterGals = np.asarray(snaps[afterSnap])
-
-
-	if beforeSnap == afterSnap:
-		return beforeGals
-
-	else:	
-
-		#romoves any galaxies that aren't in both snapshots 
-		afterGalsS = np.asarray([after_gal for after_gal in afterGals if after_gal[0] in beforeGals[:,0]])
-		beforeGalsS = np.asarray([before_gal for before_gal in beforeGals if before_gal[0] in afterGals[:,0]])
-
-		#sort them by the id's so that they are in the same order
-		afterGalsS = afterGalsS[afterGalsS[:,0].argsort()]
-		beforeGalsS = beforeGalsS[beforeGalsS[:,0].argsort()]
-		#print beforeGalsS
-		delta_coords = afterGalsS[:,3:6] - beforeGalsS[:,3:6]
-		delta_time =  scale_factor - Expansion_F_snaps[beforeSnap]
-
-		fracTime = delta_time / (Expansion_F_snaps[afterSnap] - Expansion_F_snaps[beforeSnap])
-		fracCoords = delta_coords * fracTime
-
-		beforeGalsS[:,3:6] = beforeGalsS[:,3:6] + fracCoords
-
-		InterpGals = beforeGalsS
-
-		return InterpGals 
-
 
 
 def get_centre(basis_vectors, cam_position, region):
@@ -334,6 +281,3 @@ def periodic_wrap(pos, boxsize, centre=None):
 		return np.mod(pos, boxsize)
 	else:
 		return np.mod(pos-centre+0.5*boxsize, boxsize)+centre-0.5*boxsize
-
-# xyz = perspective_transfomation(x_basis, y_basis, z_basis, cam_position, particles)
-
