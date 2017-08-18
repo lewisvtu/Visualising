@@ -172,7 +172,7 @@ class CombinedPath(object):
         return out
 
 def gen_look_bundle(t_data, no_frames):
-    #print no_frames
+    print no_frames
     look_bundle = np.zeros((no_frames, 7))
     #print look_bundle
     tmp = np.asarray([[no_frames,no_frames,0.,0.,0.]])
@@ -238,23 +238,19 @@ if __name__ == "__main__":
         [5,5,5]
     ])
 
-    
+    h = 0.6777
 
     centre_coords = test_coords
     inp_data = np.asarray([
     #   [domain], coords at centre of montion                               ,rotaxis,rv,    av  ,ro,ao,hv,ho]
-        [-1.,61., centre_coords[0,0], centre_coords[0,1], centre_coords[0,2], 0,1,-3,  0, -3/60, 3, -1/4, 5/60, -5/2]
-        #[50.,81., centre_coords[1,0], centre_coords[1,1], centre_coords[1,2], 4,1,1,  0, 0.75/30, 3, 0, 0, 0]
-        #[100.,130., centre_coords[2,0], centre_coords[2,1], centre_coords[2,2], 1,1,1, 0, 0.5/30, 5, 0, 0, 0],
-        #[140.,156., centre_coords[3,0], centre_coords[3,1], centre_coords[3,2], 1,1,1, 0, 0.5/15, 5, 0, 0, 0]
+        [-1., 40., 12.2787/h, 19.071/h, 17.22/h, 0,0,1,  0, 1/40, 1, 0, 0, 0],
+        [60., 100., 8.434/h, 9.601/h, 4.25/h, 1,1,1, 0, 1/40, 1, 0, 0, 0],
+        [120., 161., 16.557/h, 24.49/h, 17.708/h, -1,1,0, 0, 1/40, 3, 0, 0, 0]
     ])
 
-    targ_data = np.asarray([
-        [0,60, test_coords[0,0], test_coords[0,1], test_coords[0,2]]
-        #[50,80, test_coords[1,0], test_coords[1,1], test_coords[1,2]]
-        #[100,130, test_coords[2,0], test_coords[2,1], test_coords[2,2]],
-        #[140,155, test_coords[3,0], test_coords[3,1], test_coords[3,2]]
-    ])
-
+    targ_data = np.copy(inp_data[:, :5])
+    targ_data[0,0] = targ_data[0,0] + 1
+    targ_data[-1, 1] = targ_data[-1,1] - 1
+    print targ_data
     create_flight_path(inp_data, targ_data)
 

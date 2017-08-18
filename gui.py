@@ -10,6 +10,12 @@ class MainWindow(object):
     '''Main window object for aplication'''
     def __init__(self, master):
         self.master = master
+        self.data_store = []
+        self.fig = plt.figure()
+        self.fig.add_subplot(111, projection="3d")
+        self.draw()
+
+    def draw(self):
         self.main_frame = Frame(self.master)
         quit_b = Button(self.main_frame, text="Quit >:(", command=self._quit)
         quit_b.grid(row=0, column=0)
@@ -18,11 +24,10 @@ class MainWindow(object):
         graph_b = Button(self.main_frame, text="Open Graph Viewer", command=self.open_graph)
         graph_b.grid(row=0, column=2)
         self.main_frame.pack()
-        self.data_store = []
 
     def open_graph(self):
         window = Toplevel(self.master)
-        self.graph_window = GraphWindow(window)
+        self.graph_window = GraphWindow(window, self.fig)
 
     def open_data(self):
         window = Toplevel(self.master)
@@ -34,32 +39,28 @@ class MainWindow(object):
 
 class GraphWindow(object):
     '''Window for drawing graphs'''
-    def __init__(self, master):
+    def __init__(self, master, fig):
         self.master = master
-        self.graph_frame = Frame(self.master).grid(column=0)
-        close_b = Button(self.master, text="Close Window", command=self.close_window)
-        close_b.grid(row=0, column=0)
-        draw_b = Button(self.master, text="Draw Graph", command=self.draw_graph)
-        draw_b.grid(row=0, column=3)
+        self.draw()
+        self.set_graph(self, fig, des=False)
+
+    def draw(self):
+        close_b = Button(self.master, text="Close Window",
+                         command=self.close_window).grid(row=0, column=0)
+        draw_b = Button(self.master, text="Draw Graph",
+                        command=self.draw_graph().grid(row=0, column=3)
+        draw_b
         Label(self.master, text="Flight File Name: ").grid(row=0,column=1)
-        self.fname_e = Entry(self.master)
-        self.fname_e.grid(row=0, column=2)
-        self.draw_graph()
+        self.fname_e = Entry(self.master).grid(row=0, column=2)
 
     def close_window(self):
         self.master.destroy()
 
-    def draw_graph(self):
-        fname = self.fname_e.get()
-        if not fname:
-            fig = plt.figure()
-            ax = fig.add_subplot(111, projection="3d")
-        else:
-            fig = utils.plot_from_file(fname)
-            ax = fig.gca()
-        ax.mouse_init()
-        canvas = FigureCanvasTkAgg(fig, master=self.master)
-        canv_widget = canvas.get_tk_widget().grid(row=2)
+    def set_graph(self, fig, des=True):
+        self.canvas = FigureCanvasTkAgg(fig)
+        if des:
+            self.canv_widget.destroy()
+        return canvas.get_tk_widget().grid(row=3)
         
 
 class DataWindow(object):
