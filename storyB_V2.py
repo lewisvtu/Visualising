@@ -45,7 +45,7 @@ SQL = """
 """ % (h,h,h)
 
 #        PROG.MassType_DM > 1.0e11 and
-txt_name = "veryLongFixed__"
+txt_name = "______"
 filename = "allProgs15_DBS.p"
 boxsize = 25 * h
 dbs_data = dbsPull(SQL, filename)
@@ -139,7 +139,7 @@ def story_board(txt_name, path_file):
 			plt.clf()
 
 
-story_board( txt_name, "veryLongFixed__.txt")
+story_board( txt_name, "galaxy_tour2_.txt")
 stp = timer()
 
 #print "time taken: %f" %(stp - strt) 
@@ -147,7 +147,7 @@ stp = timer()
 
 
 
-fig = utils.plot_from_file("veryLongFixed__.txt")
+fig = utils.plot_from_file("galaxy_tour2_.txt")
 ax = fig.gca()
 
 plt.show()

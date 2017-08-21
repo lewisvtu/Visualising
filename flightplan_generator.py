@@ -239,7 +239,7 @@ def create_flight_path(inp_data,):
     tangents = vector_derivs(frames, path, d_frame=2.)
     basis_1 = orthonormalise(tangents, basis_3)
     basis_2 = cross_basis(basis_3, basis_1)
-    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Paths\weave_2.txt")
+    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "galaxy_tour2_.txt")
     return True
 
 
@@ -249,9 +249,12 @@ if __name__ == "__main__":
 
     inp_data = np.asarray([
     #   [domain    , sf,  coords at centre of montion  ,rotaxis, rv,   av,ro,ao,hv,ho]
-        [-1.,   40., .29, 12.2787*h, 19.071*h,  17.22*h,  0,0,1,  0, 1/40, 1, 0, 0, 0],
-        [60.,  100.,  .5,   8.434*h,  9.601*h,   4.25*h,  1,1,1,  0, 1/40, 1, 0, 0, 0],
-        [120., 161.,  1.,  16.557*h,  24.49*h, 17.708*h, -1,1,0,  0, 1/40, 3, 0, 0, 0]
+        [-1.,   0., .25, 7.*h, 11.*h,  10.22*h,  0,0,1,  0, 0, 0, 0, 0, 0],
+        [100.,   300., .29, 12.2787*h, 19.071*h,  17.22*h,  0,0,1,  0, 1/200, 1, 0, 0, 0],
+        [400.,  600.,  .5,   8.434*h,  9.601*h,   4.25*h,  1,1,1,  0, 1/200, 2, 0, 0, 0],
+        [700., 900.,  1.,  16.557*h,  24.49*h, 17.708*h, -1,1,0,  0, 1/200, 3, 0, 0, 0],
+        [999.,   1000., 1., 7.*h, 11.*h,  10.22*h,  0,0,1,  0, 0, 0, 0, 0, 0]
+        
     ])
 
 
