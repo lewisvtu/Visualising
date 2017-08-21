@@ -12,39 +12,17 @@ Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.
 					 0.44, 0.50, 0.54, 0.58, 0.62, 0.67, 0.73, 0.79,0.85,
 					 0.91, 1.00])
 
-def get_dbs():
-	SQL = """
-		SELECT
-			PROG.GalaxyID as ID,
-			PROG.DescendantID as DesID,
-			DES.GalaxyID,
-			PROG.SnapNum,
-			PROG.MassType_DM,
-			(PROG.CentreOfPotential_x * %0.5f) as x,
-			(PROG.CentreOfPotential_y * %0.5f) as y,
-			(PROG.CentreOfPotential_z * %0.5f) as z,
-			PROG.Redshift
-		FROM
-			RefL0025N0376_Subhalo as PROG with(forceseek),
-			RefL0025N0376_Subhalo as DES
-
-		WHERE
-			DES.SnapNum = 28 and
-			DES.MassType_DM > 1.0e11 and
-			PROG.GalaxyID between DES.GalaxyID and DES.LastProgID 
-
-		ORDER BY
-			PROG.GalaxyID,
-			PROG.SnapNum
-	""" % (h,h,h)
-	#        PROG.MassType_DM > 1.0e11 and
-	txt_name = "no_images_new_"
-	filename = "allProgs11_DBS.p"
-	boxsize = 25 * h
-	dbs_data = dbsPull(SQL, filename)
-	return dbs_data
-
 def plot_from_file(f_name):
+
+	'''
+	A funcion to produce a 3D matplotlib plot of a flightpath, includes the basis vectors where blue is the look direction 
+
+	Args: 
+		f_name: A txt file of the flight path in the format frame, expansion factor, coordinates, x_basis, y_basis, z_basis 
+
+	Returns:
+		fig: The figure of the matplotlib plot
+	'''
 	fs,sfs,xs,ys,zs,v1xs,v1ys,v1zs,v2xs,v2ys,v2zs,v3xs,v3ys,v3zs = np.loadtxt(f_name, unpack=True)
 	#Plotting bits
 	fig = plt.figure()
@@ -77,13 +55,28 @@ def get_scalefactors(start_sf, end_sf, frames):
 	array_sf = np.power(10, array_log_sf)
 	return array_sf
 
-def gen_flight_file(frames, sfs, coords, basis_vects, fname):
+def gen_flight_file(frames, sfs, coords, basis_vects, fname, head="RefL0025N0376"):
+
+	'''
+	Saves the flight path generated as a txt file
+
+	Args:
+		frames: the frame number at each instance 
+		sfs: the scale factors for the corresponding frames 
+		coords: the coordinates of camera at each frame 
+		basis_vects: the nine basis vectors, three x, three y and three z
+		fname: the name to save the txt file of the flight path as 
+		head: optional, changes the header for the simulation box you are working in. Default is the
+			  25 mpc box, RefL0025N0376 
+	Returns:
+		A txt file with the name of fname with columns of the arguments in the same order. 
+	'''
 	setspace = np.asarray([frames, sfs, coords[:,0]       , coords[:,1]       , coords[:,2],
 										basis_vects[0,:,0], basis_vects[0,:,1], basis_vects[0,:,2],
 										basis_vects[1,:,0], basis_vects[1,:,1], basis_vects[1,:,2],
 										basis_vects[2,:,0], basis_vects[2,:,1], basis_vects[2,:,2]])
 	#print setspace
-	np.savetxt(fname, setspace.T, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f", header="RefL0100N1504" )
+	np.savetxt(fname, setspace.T, fmt="%i %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %0.5f", header=head )
 
 class Interp3D(object):
 	def __init__(self, bundle):
@@ -266,12 +259,17 @@ def find_snapnums(scale_factor):
 
 def gal_interpolation(scale_factor, dbs_data):
 
+
+	#get working for one gal, may be give id or something
+
+
+
 	sideSnaps = find_snapnums(scale_factor)
 	beforeSnap, afterSnap = sideSnaps[0], sideSnaps[1]
 
 	#galaxies of the before snapshots
 	# mask_B = np.where(dbs_data['SnapNum'] == beforeSnap) 
-	mask_B = np.where(np.logical_and(dbs_data['SnapNum'] == beforeSnap, dbs_data['MassType_DM'] >= 1e11))
+	mask_B = np.where(np.logical_and(dbs_data['SnapNum'] == beforeSnap, dbs_data['MassType_DM'] >= 1e10))
 	beforeGals = dbs_data[mask_B] 
 
 	mask_After = np.where(np.in1d( dbs_data['ID'], beforeGals['DesID']))

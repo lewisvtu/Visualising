@@ -123,6 +123,11 @@ def vector_derivs(frame_set, path_function, d_frame=0.01):
     return derivs
 
 def look_at_vectors(path_coords, target_coords, weights):
+
+    ''' 
+
+    '''
+
     prim_look = target_coords[:, :3] - path_coords
     sec_look =  target_coords[:, 3:] - path_coords
     #print prim_look, "\n----------\n", sec_look, "\n-----------\n"
@@ -222,8 +227,8 @@ def create_flight_path(inp_data, targ_data):
     basis_1 = orthonormalise(tangents, basis_3)
     basis_2 = cross_basis(basis_3, basis_1)
 
-    sfs = utils.get_scalefactors(0.8,1.,no_frames)
-    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Paths\weave_2.txt")
+    sfs = utils.get_scalefactors(0.20,1.0,no_frames)
+    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "veryLongFixed__.txt")
     return True
 
 
@@ -231,21 +236,16 @@ def create_flight_path(inp_data, targ_data):
 
 if __name__ == "__main__":
     print "Actually started running -_- z z z"
-    test_coords = np.asarray([
-        [3.578510046005249, 9.612491607666016, 7.581663131713867],
-        [16.105289459228516, 15.10133171081543, 12.365381240844727],
-        [1,1,1],
-        [5,5,5]
-    ])
 
     h = 0.6777
 
-    centre_coords = test_coords
     inp_data = np.asarray([
-    #   [domain], coords at centre of montion                               ,rotaxis,rv,    av  ,ro,ao,hv,ho]
-        [-1., 40., 12.2787/h, 19.071/h, 17.22/h, 0,0,1,  0, 1/40, 1, 0, 0, 0],
-        [60., 100., 8.434/h, 9.601/h, 4.25/h, 1,1,1, 0, 1/40, 1, 0, 0, 0],
-        [120., 161., 16.557/h, 24.49/h, 17.708/h, -1,1,0, 0, 1/40, 3, 0, 0, 0]
+    #   [domain], coords at centre of montion,rotaxis,rv,    av  ,ro,ao,hv,ho]
+        [-1  , 0   , 5.*h      ,11.*h      ,10.*h      , 0         ,0     ,1    ,0    ,0    ,0.11   ,0.0 ,0   ,0],
+        [20. , 60. , 12.2787*h , 19.071*h  , 17.22*h   ,0     ,0    ,1    ,0    ,1/40   ,3.  , 0  , 0,  0],
+        [80. , 120., 8.434*h   , 9.601*h   , 4.25*h    ,1     ,1    ,1    ,0    ,1/40   ,1   , 0  , 0,  0],
+        [140., 180., 16.557*h  , 24.49*h   , 17.708*h  ,-1    ,1    ,0    ,0    ,1/40   ,3   , 0  , 0,  0],
+        [199 , 200 , 5.*h      ,11.*h      ,10.*h      , 0         ,0     ,1    ,0    ,0    ,0.11   ,.0  ,0   ,0    ]
     ])
 
     targ_data = np.copy(inp_data[:, :5])
@@ -253,4 +253,3 @@ if __name__ == "__main__":
     targ_data[-1, 1] = targ_data[-1,1] - 1
     print targ_data
     create_flight_path(inp_data, targ_data)
-
