@@ -159,11 +159,11 @@ def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True
 		x_basis: A list of the three x_basis
 		y_basis: A list of the three y_basis
 		z_basis: A list of the three z_basis
-		cam_position: a list containing the x,y and z coordinate of the current camera position 
-		particles: a numpy array of all the galaxies coordinates 
+		cam_position: a list containing the x,y and z coordinate of the current camera position
+		particles: a numpy array of all the galaxies coordinates
 
-	Return: 
-		coords_in_cam: the coordinates of all the galaxies in the camera frame of reference 
+	Return:
+		coords_in_cam: the coordinates of all the galaxies in the camera frame of reference
 	'''
 
 	if tran:
@@ -199,7 +199,7 @@ def perspective_transfomation(coords_in_cam, region):
 		coords_in_cam: the returned positions from the coord_transform of the galaxies
 		region: the region of the box you are looking at
 	Returns:
-		coords_alt: the altered coordinated once the transforamtion has been applied 
+		coords_alt: the altered coordinated once the transforamtion has been applied
 	'''
 
 	fov = np.pi / 4
@@ -215,12 +215,9 @@ def perspective_transfomation(coords_in_cam, region):
 		(0,0,1,0)
 	])
 
-<<<<<<< HEAD
 	#to clip aything out of the region on z
 
 
-=======
->>>>>>> 72f22f8fef4ba96728e7adffd00b46b9d214b7f7
 
 	perpec_in_cam = np.dot(M_projection, coords_in_cam)
 	coords = perpec_in_cam
@@ -297,10 +294,10 @@ def gal_interpolation(scale_factor, dbs_data):
 	'''
 	Interpolates the galaxies linearly to find a position between snapnumbers
 	Args:
-		scale_factor:the scale factor at the current frame 
+		scale_factor:the scale factor at the current frame
 		dbs_data: the entire pulled data from the sql
-	Returns: 
-		interpGals: a numpy array of the interpolated galaxiesin the form 
+	Returns:
+		interpGals: a numpy array of the interpolated galaxiesin the form
 					ID,Snampnum,Mass(DM),x,y,z,redshift
 	'''
 
