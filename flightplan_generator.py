@@ -260,5 +260,4 @@ if __name__ == "__main__":
     targ_data[0,0] = targ_data[0,0] + 1
     targ_data[-1, 1] = targ_data[-1,1] - 1
     create_flight_path(inp_data, targ_data)
-    utils.plot_from_file("Paths\weave_2.txt")
 

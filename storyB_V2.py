@@ -36,16 +36,17 @@ SQL = """
 
     WHERE
         DES.SnapNum = 28 and
-        DES.MassType_DM > 1.0e11 and
+        DES.MassType_DM > 1.0e10 and
         PROG.GalaxyID between DES.GalaxyID and DES.LastProgID 
 
     ORDER BY
         PROG.GalaxyID,
         PROG.SnapNum
 """ % (h,h,h)
+
 #        PROG.MassType_DM > 1.0e11 and
-txt_name = "no_"
-filename = "allProgs11_DBS.p"
+txt_name = "veryLongFixed__"
+filename = "allProgs15_DBS.p"
 boxsize = 25 * h
 dbs_data = dbsPull(SQL, filename)
 
@@ -99,18 +100,19 @@ def story_board(txt_name, path_file):
 		if len(galaxies_to_plot) >= 1:
 
 			
-			#
+			#to find the mass and distances of the galaxies in order to scale size
 			indexList = np.asarray(galaxies_to_plot[:,4], dtype=int)
 			galaxZs = galaxies_afterT[indexList][:,2]
+			galaxYs = galaxies_afterT[indexList][:,1]
+			galaxXs = galaxies_afterT[indexList][:,0]
 			galZsMass = All_galaxies[indexList][:,2]
-
+			dist = (galaxZs**2 + galaxYs**2 + galaxXs**2)**0.5
 
 			#the relative sizes of the galaxies, change if you want to adjust
 			perspec = []
-			perspec = 1./galaxZs**3
+			perspec = 1./dist**3
 			perspec *= (galZsMass)**0.43
 			perspec.shape = (1, len(perspec))
-
 
 
 			galaxies_to_plot = np.asarray(sorted(np.concatenate((galaxies_to_plot, perspec.T), axis=1), key=lambda coords: -coords[2]))
@@ -137,7 +139,7 @@ def story_board(txt_name, path_file):
 			plt.clf()
 
 
-#story_board( txt_name, "weave_2.txt")
+story_board( txt_name, "veryLongFixed__.txt")
 stp = timer()
 
 #print "time taken: %f" %(stp - strt) 
@@ -145,8 +147,10 @@ stp = timer()
 
 
 
+fig = utils.plot_from_file("veryLongFixed__.txt")
+ax = fig.gca()
 
-
+plt.show()
 
 
 
@@ -192,5 +196,5 @@ def runTkinter(text):
 	filename = "allProgs8_DBS.p"
 
 	dbs_data = dbsPull(SQL, filename)
-	story_board( txt_name, "Orbit_through_les_time.txt")
+	story_board( txt_name, "weave_3.txt")
 
