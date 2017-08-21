@@ -4,7 +4,7 @@ import pickler.shelf as shelf
 from DBS.dbgrabber import dbsPull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from numpy import pi  
+from numpy import pi
 from scipy.interpolate import UnivariateSpline, interp1d, spline
 
 Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.17,
@@ -15,10 +15,10 @@ Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.
 def plot_from_file(f_name):
 
 	'''
-	A funcion to produce a 3D matplotlib plot of a flightpath, includes the basis vectors where blue is the look direction 
+	A funcion to produce a 3D matplotlib plot of a flightpath, includes the basis vectors where blue is the look direction
 
-	Args: 
-		f_name: A txt file of the flight path in the format frame, expansion factor, coordinates, x_basis, y_basis, z_basis 
+	Args:
+		f_name: A txt file of the flight path in the format frame, expansion factor, coordinates, x_basis, y_basis, z_basis
 
 	Returns:
 		fig: The figure of the matplotlib plot
@@ -42,8 +42,8 @@ def plot_from_file(f_name):
 				basis_2[:, 0], basis_2[:, 1], basis_2[:, 2], pivot="tail", color="#00FF00")
 	ax.quiver(path_coords[:, 0],path_coords[:, 1],path_coords[:, 2],
 				basis_3[:, 0], basis_3[:, 1], basis_3[:, 2], pivot="tail", color="#0000FF")
-	for x,y,z,f in np.c_[path_coords, fs]:
-		ax.text(x,y,z,f)
+	# for x,y,z,f in np.c_[path_coords, fs]:
+	# 	ax.text(x,y,z,f)
 	return fig
 
 
@@ -54,13 +54,14 @@ def get_scalefactors(targ_sfs, targ_frames, frames):
 	lsf_spline = UnivariateSpline(targ_frames, log_targ_sfs, s=0)
 	lsfs = lsf_spline(frames)
 	sfs = np.power(10,lsfs)
-	sfs = [sf if sf <= 1 else 1 for sf in sfs]
-	sfs = [sf if sf >= 0 else 0 for sf in sfs]
-	# fig = plt.figure()
-	# ax = fig.add_subplot(111)
-	# ax.scatter(targ_frames, targ_sfs)
-	# ax.plot(frames, sfs)
-	# plt.show()
+	sfs[np.where(sfs > 1)] = 1
+	sfs[np.where(sfs < 0)] = 0
+	# Plot the sf graph to confirm
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+	ax.scatter(targ_frames, targ_sfs)
+	ax.plot(frames, sfs)
+	plt.show()
 	return sfs
 
 def gen_flight_file(frames, sfs, coords, basis_vects, fname, head="RefL0025N0376"):
@@ -69,15 +70,15 @@ def gen_flight_file(frames, sfs, coords, basis_vects, fname, head="RefL0025N0376
 	Saves the flight path generated as a txt file
 
 	Args:
-		frames: the frame number at each instance 
-		sfs: the scale factors for the corresponding frames 
-		coords: the coordinates of camera at each frame 
+		frames: the frame number at each instance
+		sfs: the scale factors for the corresponding frames
+		coords: the coordinates of camera at each frame
 		basis_vects: the nine basis vectors, three x, three y and three z
-		fname: the name to save the txt file of the flight path as 
+		fname: the name to save the txt file of the flight path as
 		head: optional, changes the header for the simulation box you are working in. Default is the
-			  25 mpc box, RefL0025N0376 
+			  25 mpc box, RefL0025N0376
 	Returns:
-		A txt file with the name of fname with columns of the arguments in the same order. 
+		A txt file with the name of fname with columns of the arguments in the same order.
 	'''
 	setspace = np.asarray([frames, sfs, coords[:,0]       , coords[:,1]       , coords[:,2],
 										basis_vects[0,:,0], basis_vects[0,:,1], basis_vects[0,:,2],
@@ -143,7 +144,7 @@ def orthonormalise(new_vects, basis_1):
 def cross_basis(basis_1, basis_2):
 	basis_3 = np.cross(basis_1, basis_2)
 	basis_3 = basis_3 / np.linalg.norm(basis_3, axis=1)[:,None]
-	return basis_3    
+	return basis_3
 
 def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True, tran=False):
 	if tran:
@@ -191,7 +192,7 @@ def perspective_transfomation(coords_in_cam, region):
 		(0,0,1,0)
 	])
 
-	#to clip aything out of the region on z 
+	#to clip aything out of the region on z
 
 
 
@@ -213,7 +214,7 @@ def perspective_transfomation(coords_in_cam, region):
 	# 		coords[:,1]<=1), coords[:,1]>=-1),
 	# 		coords[:,2]<=1), coords[:,2]>=-1))
 	# coords_alt = coords[mask]
-	# print coords_alt.T 
+	# print coords_alt.T
 	# print coords_alt2
 	# w_s         = region[0]
 	# h_s         = region[1]
@@ -234,12 +235,12 @@ def perspective_transfomation(coords_in_cam, region):
 
 def find_snapnums(scale_factor):
 
-	''' 
+	'''
 	This function will give the snapnumbers either side of a given scale factor
 	Args:
 		scale_factor: The expnsion factor of interest, this is  1/(redshift+1)
 
-	Returns: A list of two values in the form [beforeSnap, AfterSnap] where 
+	Returns: A list of two values in the form [beforeSnap, AfterSnap] where
 			beforeSnap and AfterSnap are the snapshot numbers before and after the given scalefactor respectively
 
 	'''
@@ -262,7 +263,7 @@ def find_snapnums(scale_factor):
 		beforeSnap = nearest_snapnumber
 		afterSnap = nearest_snapnumber+1
 
-	return [beforeSnap, afterSnap]	
+	return [beforeSnap, afterSnap]
 
 
 def gal_interpolation(scale_factor, dbs_data):
@@ -276,9 +277,9 @@ def gal_interpolation(scale_factor, dbs_data):
 	beforeSnap, afterSnap = sideSnaps[0], sideSnaps[1]
 
 	#galaxies of the before snapshots
-	# mask_B = np.where(dbs_data['SnapNum'] == beforeSnap) 
+	# mask_B = np.where(dbs_data['SnapNum'] == beforeSnap)
 	mask_B = np.where(np.logical_and(dbs_data['SnapNum'] == beforeSnap, dbs_data['MassType_DM'] >= 1e10))
-	beforeGals = dbs_data[mask_B] 
+	beforeGals = dbs_data[mask_B]
 
 	mask_After = np.where(np.in1d( dbs_data['ID'], beforeGals['DesID']))
 	afterGals = dbs_data[mask_After]
