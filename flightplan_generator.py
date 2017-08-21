@@ -13,8 +13,7 @@ class SplinePath(object):
         '''Args:
             knowns [array]: numpy array of containing, for each coordinate on the known line,
                 [f,x,y,z] for frame number f, and coord [x,y,z]
-            k [real < 5]: smoothing factor defined by scipy
-                 '''
+            k [real < 5]: smoothing factor defined by scipy'''
         self.spline = Spline3D(knowns, k)
 
     def __call__(self, frame_set, mdf=False):
@@ -25,7 +24,7 @@ class SplinePath(object):
                 first column. Blame numpy.piecewise for requiring the same array sizes for
                 input and output >:|
         Returns:
-            coords [array]: numpy array of coords [x,y,z] for new frame numbers '''
+            coords [array]: numpy array of coords [x,y,z] for new frame numbers'''
         if mdf:
             frame_set = frame_set[:,0]
         coords = self.spline(frame_set)
@@ -119,6 +118,12 @@ def vector_derivs(frame_set, path_function, d_frame=0.01):
     for index in range(len(frame_set)):
         frame_no = frame_set[index]
         derivs[index] = path_function(frame_no + d_frame/2) - path_function(frame_no - d_frame/2)
+        if np.linalg.norm(derivs[index]) != 0:
+            pass
+        elif index == 0:
+            derivs[index] = np.asarray([0,0,1])
+        else:
+            derivs[index] = derivs[index - 1]
     derivs /= np.linalg.norm(derivs, axis=1)[:, None]
     return derivs
 
@@ -172,7 +177,7 @@ class CombinedPath(object):
         return out
 
 def gen_look_bundle(t_data, no_frames):
-    print no_frames
+    #print no_frames
     look_bundle = np.zeros((no_frames, 7))
     #print look_bundle
     tmp = np.asarray([[no_frames,no_frames,0.,0.,0.]])
@@ -190,43 +195,46 @@ def gen_look_bundle(t_data, no_frames):
         look_bundle[cds:cde, 6] = 1
         #print cde, nds
         look_bundle[cde:nds, 6] = np.logspace(0,-2,nds-cde)
-        print look_bundle[:, 6]
+        #print look_bundle[:, 6]
     return look_bundle
 
 def create_flight_path(inp_data, targ_data):
     no_frames = int(inp_data[-1,1] - 1)
     print "No of frames: %s" % no_frames
-
+    
+    #Split input data into chunks
     dom = inp_data[:,:2]
     no_frames_each = dom[:,1] - dom[:,0] + 1
-    frames = [np.arange(no_of_frames) + start for no_of_frames, start in zip(no_frames_each, dom[:,0])]
-    centre_bundles = [gen_centre_bundle(frame_set, central_coord) for frame_set, central_coord in zip(frames, inp_data[:,2:5])]
-    path_functions = [OrbitalPath(centre_bundle, *args) for centre_bundle, args in zip(centre_bundles, inp_data[:, 5:])]
-    
+    #Get frames for each galaxy target
+    targ_frames = [np.arange(no_of_frames) + start for no_of_frames, start in zip(no_frames_each, dom[:,0])]
+    #Specify the centre of each orbital path
+    centre_bundles = [gen_centre_bundle(frame_set, central_coord) for frame_set, central_coord in zip(targ_frames, inp_data[:,3:6])]
+    #gen the path functions for each sub path and match to their resp frame domains
+    path_functions = [OrbitalPath(centre_bundle, *args) for centre_bundle, args in zip(centre_bundles, inp_data[:, 6:])]
     dom_path_pair = np.c_[dom, path_functions]
-
+    #Gen a combined, piecewise path for the motion
     path = CombinedPath(dom_path_pair)
-    frames = np.arange(no_frames, dtype="f8")
 
+    frames = np.arange(no_frames, dtype="f8")
     look_pos = gen_look_bundle(targ_data,no_frames)
     weights = look_pos[:,-1]
     look_pos = look_pos[:,:-1]
     #print look_pos, "\n----------\n", weights, "\n-----------\n"
+    targ_sfs = [np.asarray([sf] * no_frames) + np.linspace(-.025, .025, no_frames) for sf, no_frames in zip(inp_data[:,2], no_frames_each)]
+    targ_sfs = np.concatenate(targ_sfs).ravel()
+    targ_frames = np.concatenate(targ_frames).ravel()
+    sfs = utils.get_scalefactors(targ_sfs, targ_frames, frames)
 
     print "computing path coords -------"
     path_coords = path(frames)
-
+    
     print "computing cam basis -------"
     basis_3 = look_at_vectors(path_coords, look_pos, weights)
     tangents = vector_derivs(frames, path, d_frame=2.)
     basis_1 = orthonormalise(tangents, basis_3)
     basis_2 = cross_basis(basis_3, basis_1)
-
-    sfs = utils.get_scalefactors(0.8,1.,no_frames)
     utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "Paths\weave_2.txt")
     return True
-
-
 
 
 if __name__ == "__main__":
@@ -242,15 +250,15 @@ if __name__ == "__main__":
 
     centre_coords = test_coords
     inp_data = np.asarray([
-    #   [domain], coords at centre of montion                               ,rotaxis,rv,    av  ,ro,ao,hv,ho]
-        [-1., 40., 12.2787/h, 19.071/h, 17.22/h, 0,0,1,  0, 1/40, 1, 0, 0, 0],
-        [60., 100., 8.434/h, 9.601/h, 4.25/h, 1,1,1, 0, 1/40, 1, 0, 0, 0],
-        [120., 161., 16.557/h, 24.49/h, 17.708/h, -1,1,0, 0, 1/40, 3, 0, 0, 0]
+    #   [domain    , sf,  coords at centre of montion  ,rotaxis, rv,   av,ro,ao,hv,ho]
+        [-1.,   40., .29, 12.2787*h, 19.071*h,  17.22*h,  0,0,1,  0, 1/40, 1, 0, 0, 0],
+        [60.,  100.,  .5,   8.434*h,  9.601*h,   4.25*h,  1,1,1,  0, 1/40, 1, 0, 0, 0],
+        [120., 161.,  1.,  16.557*h,  24.49*h, 17.708*h, -1,1,0,  0, 1/40, 3, 0, 0, 0]
     ])
 
     targ_data = np.copy(inp_data[:, :5])
     targ_data[0,0] = targ_data[0,0] + 1
     targ_data[-1, 1] = targ_data[-1,1] - 1
-    print targ_data
     create_flight_path(inp_data, targ_data)
+    utils.plot_from_file("Paths\weave_2.txt")
 

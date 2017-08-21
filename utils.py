@@ -69,13 +69,21 @@ def plot_from_file(f_name):
 	return fig
 
 
-def get_scalefactors(start_sf, end_sf, frames):
-	'''
-	returns list of #frames scale factors scaled uniformly in log10 between start_sf and end_sf
-	'''
-	array_log_sf = np.linspace(np.log10(start_sf), np.log10(end_sf), frames)
-	array_sf = np.power(10, array_log_sf)
-	return array_sf
+def get_scalefactors(targ_sfs, targ_frames, frames):
+	#print targ_sfs, targ_frames, frames
+	#print targ_sfs, targ_frames
+	log_targ_sfs = np.log10(targ_sfs)
+	lsf_spline = UnivariateSpline(targ_frames, log_targ_sfs, s=0)
+	lsfs = lsf_spline(frames)
+	sfs = np.power(10,lsfs)
+	sfs = [sf if sf <= 1 else 1 for sf in sfs]
+	sfs = [sf if sf >= 0 else 0 for sf in sfs]
+	# fig = plt.figure()
+	# ax = fig.add_subplot(111)
+	# ax.scatter(targ_frames, targ_sfs)
+	# ax.plot(frames, sfs)
+	# plt.show()
+	return sfs
 
 def gen_flight_file(frames, sfs, coords, basis_vects, fname):
 	setspace = np.asarray([frames, sfs, coords[:,0]       , coords[:,1]       , coords[:,2],

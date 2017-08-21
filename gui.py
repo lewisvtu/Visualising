@@ -82,7 +82,7 @@ class DataWindow(object):
         self.draw_entry_boxes()
         
     def clear_entries(self):
-        self.data_store = []
+        self.data_store = [] #' CHANGE'
         self.draw_entry_boxes()
 
     def add_row(self):
