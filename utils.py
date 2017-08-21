@@ -137,6 +137,10 @@ class Spline3D:
 
 
 def orthonormalise(new_vects, basis_1):
+	'''
+
+	'''
+
 	basis_2 = new_vects - (np.einsum("ij,ij->i", new_vects, basis_1) * basis_1.T).T
 	basis_2 = basis_2 / np.linalg.norm(basis_2, axis=1)[:,None]
 	return basis_2
@@ -147,6 +151,21 @@ def cross_basis(basis_1, basis_2):
 	return basis_3
 
 def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True, homog=True, tran=False):
+
+	'''
+	This function transforms into the camera frame of view, translating both coordinates and rotating so that you face positive z
+
+	Args:
+		x_basis: A list of the three x_basis
+		y_basis: A list of the three y_basis
+		z_basis: A list of the three z_basis
+		cam_position: a list containing the x,y and z coordinate of the current camera position 
+		particles: a numpy array of all the galaxies coordinates 
+
+	Return: 
+		coords_in_cam: the coordinates of all the galaxies in the camera frame of reference 
+	'''
+
 	if tran:
 		particles = particles.T
 	coords_none_trans = np.c_[particles, np.ones(len(particles))].T
@@ -170,14 +189,18 @@ def coord_transform(x_basis, y_basis, z_basis, cam_position, particles, inv=True
 		coords_in_cam = coords_in_cam.T
 	return coords_in_cam
 
-def find_nearest(array,value):
-	idx = (np.abs(array-value)).argmin()
-	return array[idx]
 
 def perspective_transfomation(coords_in_cam, region):
 
-
-	#coords_in_cam = coord_transform(x_basis, y_basis, z_basis, cam_position, particles)
+	'''
+	Applies a perspective matrix to transform to project the positions of the galaxies as the would be
+	viewed from the camera
+	Args:
+		coords_in_cam: the returned positions from the coord_transform of the galaxies
+		region: the region of the box you are looking at
+	Returns:
+		coords_alt: the altered coordinated once the transforamtion has been applied 
+	'''
 
 	fov = np.pi / 4
 	d               = 1./(np.tan(fov/2.))
@@ -192,9 +215,12 @@ def perspective_transfomation(coords_in_cam, region):
 		(0,0,1,0)
 	])
 
+<<<<<<< HEAD
 	#to clip aything out of the region on z
 
 
+=======
+>>>>>>> 72f22f8fef4ba96728e7adffd00b46b9d214b7f7
 
 	perpec_in_cam = np.dot(M_projection, coords_in_cam)
 	coords = perpec_in_cam
@@ -268,6 +294,15 @@ def find_snapnums(scale_factor):
 
 def gal_interpolation(scale_factor, dbs_data):
 
+	'''
+	Interpolates the galaxies linearly to find a position between snapnumbers
+	Args:
+		scale_factor:the scale factor at the current frame 
+		dbs_data: the entire pulled data from the sql
+	Returns: 
+		interpGals: a numpy array of the interpolated galaxiesin the form 
+					ID,Snampnum,Mass(DM),x,y,z,redshift
+	'''
 
 	#get working for one gal, may be give id or something
 
