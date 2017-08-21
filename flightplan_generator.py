@@ -198,7 +198,13 @@ def gen_look_bundle(t_data, no_frames):
         #print look_bundle[:, 6]
     return look_bundle
 
-def create_flight_path(inp_data, targ_data):
+def create_flight_path(inp_data,):
+    #Gen old style target array
+    targ_data = np.copy(inp_data[:, [0,1,3,4,5]])
+    targ_data[0,0] = targ_data[0,0] + 1
+    targ_data[-1, 1] = targ_data[-1,1] - 1
+
+    
     no_frames = int(inp_data[-1,1] - 1)
     print "No of frames: %s" % no_frames
     
@@ -239,16 +245,8 @@ def create_flight_path(inp_data, targ_data):
 
 if __name__ == "__main__":
     print "Actually started running -_- z z z"
-    test_coords = np.asarray([
-        [3.578510046005249, 9.612491607666016, 7.581663131713867],
-        [16.105289459228516, 15.10133171081543, 12.365381240844727],
-        [1,1,1],
-        [5,5,5]
-    ])
-
     h = 0.6777
 
-    centre_coords = test_coords
     inp_data = np.asarray([
     #   [domain    , sf,  coords at centre of montion  ,rotaxis, rv,   av,ro,ao,hv,ho]
         [-1.,   40., .29, 12.2787*h, 19.071*h,  17.22*h,  0,0,1,  0, 1/40, 1, 0, 0, 0],
@@ -256,8 +254,6 @@ if __name__ == "__main__":
         [120., 161.,  1.,  16.557*h,  24.49*h, 17.708*h, -1,1,0,  0, 1/40, 3, 0, 0, 0]
     ])
 
-    targ_data = np.copy(inp_data[:, :5])
-    targ_data[0,0] = targ_data[0,0] + 1
-    targ_data[-1, 1] = targ_data[-1,1] - 1
-    create_flight_path(inp_data, targ_data)
+
+    create_flight_path(inp_data)
 
