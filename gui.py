@@ -32,7 +32,7 @@ class MainWindow(object):
     def open_data(self):
         window = Toplevel(self.master)
         self.data_window = DataWindow(window, self.data_store)
-    
+
     def _quit(self):
         self.master.quit()
         self.master.destroy()
@@ -48,8 +48,7 @@ class GraphWindow(object):
         close_b = Button(self.master, text="Close Window",
                          command=self.close_window).grid(row=0, column=0)
         draw_b = Button(self.master, text="Draw Graph",
-                        command=self.draw_graph().grid(row=0, column=3)
-        draw_b
+                        command=self.draw_graph).grid(row=0, column=3)
         Label(self.master, text="Flight File Name: ").grid(row=0,column=1)
         self.fname_e = Entry(self.master).grid(row=0, column=2)
 
@@ -61,7 +60,7 @@ class GraphWindow(object):
         if des:
             self.canv_widget.destroy()
         return canvas.get_tk_widget().grid(row=3)
-        
+
 
 class DataWindow(object):
     '''Data input table window'''
@@ -78,16 +77,19 @@ class DataWindow(object):
         add_b.grid(row=0, column=2)
         clear_b = Button(self.frame, text="Clear All", command=self.clear_entries)
         clear_b.grid(row=0, column=3)
+        lab_names = ["galaxy", "st fr", "en fr", "trg sf", "trg x", "y", "z", "rot ax: nx", "ny", "nz", "rv", "av", "ro", "ao", "hv", "ho"]
+        for index, name in enumerate(lab_names):
+            Label(self.frame, text=name).grid(column=index, row=1)
         self.frame.grid()
         self.draw_entry_boxes()
-        
+
     def clear_entries(self):
-        self.data_store = [] #' CHANGE'
+        self.data_store[:] = [] #' CHANGE'
         self.draw_entry_boxes()
 
     def add_row(self):
         self.read_entry_boxes()
-        self.data_store.append([0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.])
+        self.data_store.append([0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.])
         self.draw_entry_boxes()
 
     def draw_entry_boxes(self):
@@ -98,12 +100,12 @@ class DataWindow(object):
         #Remove all old widgets from list
         self.data_entries = []
         for row_no, data_row in enumerate(self.data_store):
-            lab = Label(self.master, text="Galaxy no: %2u"% row_no)
-            lab.grid(row=row_no + 1, column = 0)
+            lab = Label(self.frame, text="Galaxy no: %2u"% row_no)
+            lab.grid(row=row_no + 2, column = 0)
             entry_row = [lab]
             for col_no, data_piece in enumerate(data_row):
-                entry = Entry(master=self.master, width=5)
-                entry.grid(row=row_no + 1, column=col_no + 1)
+                entry = Entry(master=self.frame, width=10)
+                entry.grid(row=row_no + 2, column=col_no + 1)
                 entry_row.append(entry)
                 entry.insert(0, data_piece)
             self.data_entries.append(entry_row)

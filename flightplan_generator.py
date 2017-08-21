@@ -20,7 +20,7 @@ class SplinePath(object):
         '''generate the coordinates for given frame numbers
         Args:
             frame_set [array/real]: frame number/s to calculate the new coords for
-            mdf (optional) [bool]: if the frames given are multidimentional, take only the 
+            mdf (optional) [bool]: if the frames given are multidimentional, take only the
                 first column. Blame numpy.piecewise for requiring the same array sizes for
                 input and output >:|
         Returns:
@@ -41,7 +41,7 @@ class OrbitalPath(object):
             Centre_bundle [array]: array of frames and the centre positions at those points, used to interpolate
                 the galaxy positions when moving between snapshots
             nx,ny,nz [reals]: the orbital axis vector in world coord basis, orients the orbital path
-            rad_vel [real]: radial velocity, 0 for circles, negative spiral inwards, positive spiral out, in units 
+            rad_vel [real]: radial velocity, 0 for circles, negative spiral inwards, positive spiral out, in units
                 cMpc/h per frame
             rpf [real]: angular velocity, 0 for lines, any other valuer results in circular path, in units revolution per frame
             rad_off [real]: starting radius for orbit in units cMpc/h
@@ -204,10 +204,10 @@ def create_flight_path(inp_data,):
     targ_data[0,0] = targ_data[0,0] + 1
     targ_data[-1, 1] = targ_data[-1,1] - 1
 
-    
+
     no_frames = int(inp_data[-1,1] - 1)
     print "No of frames: %s" % no_frames
-    
+
     #Split input data into chunks
     dom = inp_data[:,:2]
     no_frames_each = dom[:,1] - dom[:,0] + 1
@@ -226,14 +226,14 @@ def create_flight_path(inp_data,):
     weights = look_pos[:,-1]
     look_pos = look_pos[:,:-1]
     #print look_pos, "\n----------\n", weights, "\n-----------\n"
-    targ_sfs = [np.asarray([sf] * no_frames) + np.linspace(-.025, .025, no_frames) for sf, no_frames in zip(inp_data[:,2], no_frames_each)]
+    targ_sfs = [np.asarray([sf] * int(no_frames)) + np.linspace(-0.0001, 0.0001, no_frames) for sf, no_frames in zip(inp_data[:,2], no_frames_each)]
     targ_sfs = np.concatenate(targ_sfs).ravel()
     targ_frames = np.concatenate(targ_frames).ravel()
     sfs = utils.get_scalefactors(targ_sfs, targ_frames, frames)
 
     print "computing path coords -------"
     path_coords = path(frames)
-    
+
     print "computing cam basis -------"
     basis_3 = look_at_vectors(path_coords, look_pos, weights)
     tangents = vector_derivs(frames, path, d_frame=2.)
@@ -249,14 +249,13 @@ if __name__ == "__main__":
 
     inp_data = np.asarray([
     #   [domain    , sf,  coords at centre of montion  ,rotaxis, rv,   av,ro,ao,hv,ho]
-        [-1.,   0., .25, 7.*h, 11.*h,  10.22*h,  0,0,1,  0, 0, 0, 0, 0, 0],
+        [-1.,  0., .25, 7.*h, 11.*h,  10.22*h,  0,0,1,  0, 0, 0, 0, 0, 0],
         [100.,   300., .29, 12.2787*h, 19.071*h,  17.22*h,  0,0,1,  0, 1/200, 1, 0, 0, 0],
         [400.,  600.,  .5,   8.434*h,  9.601*h,   4.25*h,  1,1,1,  0, 1/200, 2, 0, 0, 0],
         [700., 900.,  1.,  16.557*h,  24.49*h, 17.708*h, -1,1,0,  0, 1/200, 3, 0, 0, 0],
         [999.,   1000., 1., 7.*h, 11.*h,  10.22*h,  0,0,1,  0, 0, 0, 0, 0, 0]
-        
+
     ])
 
 
     create_flight_path(inp_data)
-
