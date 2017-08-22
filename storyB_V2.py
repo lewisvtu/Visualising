@@ -45,7 +45,7 @@ SQL = """
 """ % (h,h,h)
 
 #        PROG.MassType_DM > 1.0e11 and
-txt_name = "______"
+txt_name = "longImages3/______"
 filename = "allProgs15_DBS.p"
 boxsize = 25 * h
 dbs_data = dbsPull(SQL, filename)
@@ -139,23 +139,11 @@ def story_board(txt_name, path_file):
 			plt.clf()
 
 
-story_board( txt_name, "galaxy_tour2_.txt")
-stp = timer()
-
-#print "time taken: %f" %(stp - strt) 
+# story_board( txt_name, "galaxy_tour4_.txt")
+# stp = timer()
 
 
-
-
-fig = utils.plot_from_file("galaxy_tour2_.txt")
-ax = fig.gca()
-
-plt.show()
-
-
-
-
-def runTkinter(text):
+def runTkinter(text, filename):
 
 	h = 0.6777
 	region = [15., 15., 15.]
@@ -193,8 +181,8 @@ def runTkinter(text):
 
 	txt_name = text
 	#txt_name = "allProgsTest_"
-	filename = "allProgs8_DBS.p"
+	filename = "Data_Base_.p"
 
 	dbs_data = dbsPull(SQL, filename)
-	story_board( txt_name, "weave_3.txt")
+	story_board( txt_name, filename)
 
