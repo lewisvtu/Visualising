@@ -1,6 +1,5 @@
 from __future__ import division
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 import utils
@@ -243,6 +242,7 @@ def create_flight_path(inp_data, mult_h, fname):
     basis_1 = orthonormalise(tangents, basis_3)
     basis_2 = cross_basis(basis_3, basis_1)
     utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), fname)
+    print "Flight file generated under path: %s" % fname
     return True
 
 
