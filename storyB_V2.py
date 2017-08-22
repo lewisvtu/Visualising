@@ -60,8 +60,8 @@ def story_board(txt_name, path_file):
 
 	Args:
 
-		txt_name: A txt file of the flight path in the form frame, expansion factor, coordinates, x_basis, y_basis, z_basis
-		path file: The name or relative file path of the txt file
+		 path file:A txt file of the flight path in the form frame, expansion factor, coordinates, x_basis, y_basis, z_basis
+		 txt_name:The name or relative file path of the txt file
 
 	 '''
 
@@ -139,8 +139,13 @@ def story_board(txt_name, path_file):
 			plt.clf()
 
 
+<<<<<<< HEAD
 # story_board( txt_name, "galaxy_tour4_.txt")
 # stp = timer()
+=======
+story_board( txt_name, "galaxy_tour4_.txt")
+stp = timer()
+>>>>>>> 7698a2994d347dc452b08b092886e2b899b80b96
 
 
 def runTkinter(text, filename):
