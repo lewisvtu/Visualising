@@ -18,42 +18,12 @@ Expansion_F_snaps = np.array([0.05, 0.06, 0.09, 0.10, 0.11, 0.12, 0.14, 0.15, 0.
                      0.91, 1.00])
 
 
-#SQL to grab from the database 
-SQL = """
-    SELECT
-    	PROG.GalaxyID as ID,
-    	PROG.DescendantID as DesID,
-        DES.GalaxyID,
-        PROG.SnapNum,
-        PROG.MassType_DM,
-        (PROG.CentreOfPotential_x * %0.5f) as x,
-        (PROG.CentreOfPotential_y * %0.5f) as y,
-        (PROG.CentreOfPotential_z * %0.5f) as z,
-        PROG.Redshift
-    FROM
-        RefL0025N0376_Subhalo as PROG with(forceseek),
-        RefL0025N0376_Subhalo as DES
 
-    WHERE
-        DES.SnapNum = 28 and
-        DES.MassType_DM > 1.0e10 and
-        PROG.GalaxyID between DES.GalaxyID and DES.LastProgID 
-
-    ORDER BY
-        PROG.GalaxyID,
-        PROG.SnapNum
-""" % (h,h,h)
-
-#        PROG.MassType_DM > 1.0e11 and
-txt_name = "longImages3/______"
-filename = "allProgs15_DBS.p"
-boxsize = 25 * h
-dbs_data = dbsPull(SQL, filename)
 
 strt = timer()
 
 
-def story_board(txt_name, path_file):
+def story_board(txt_name, path_file, sim):
 
 	''' This function produce a soryboard of all the frames specified on a flight path, 
 	saves as PNG files in the directory where the program is run
@@ -64,6 +34,36 @@ def story_board(txt_name, path_file):
 		 txt_name:The name or relative file path of the txt file
 
 	 '''
+	 #SQL to grab from the database 
+	SQL = """
+		SELECT
+			PROG.GalaxyID as ID,
+			PROG.DescendantID as DesID,
+			DES.GalaxyID,
+			PROG.SnapNum,
+			PROG.MassType_DM,
+			(PROG.CentreOfPotential_x * %0.5f) as x,
+			(PROG.CentreOfPotential_y * %0.5f) as y,
+			(PROG.CentreOfPotential_z * %0.5f) as z,
+			PROG.Redshift
+		FROM
+			%s_Subhalo as PROG with(forceseek),
+			%s_Subhalo as DES
+
+		WHERE
+			DES.SnapNum = 28 and
+			DES.MassType_DM > 1.0e10 and
+			PROG.GalaxyID between DES.GalaxyID and DES.LastProgID 
+
+		ORDER BY
+			PROG.GalaxyID,
+			PROG.SnapNum
+	""" % (h,h,h, sim, sim)
+
+	#        PROG.MassType_DM > 1.0e11 and
+	filename = "%s_DBS.p"
+	boxsize = 25 * h
+	dbs_data = dbsPull(SQL, filename)
 
 	frame, ts, xs, ys, zs, b1,b2,b3,b4,b5,b6,b7,b8,b9 = np.loadtxt(path_file, unpack=True)
 	z_basis = np.transpose(np.asarray([b7, b8, b9]))
@@ -137,8 +137,6 @@ def story_board(txt_name, path_file):
 			#plt.imshow(img,extent=[-1.,1.,-1.,1.], aspect='auto')
 			plt.savefig(txt_name + str(i))
 			plt.clf()
-
-
 
 # story_board( txt_name, "galaxy_tour4_.txt")
 # stp = timer()
