@@ -1,0 +1,30 @@
+SELECT
+	hal.GalaxyID,
+	hal.Mass,
+	hal.MassType_Star,
+	hal.StarFormationRate,
+	hal.HalfMassRad_DM,
+	fof.Group_R_Crit200,
+	hal.Image_Face
+FROM
+	RefL0025N0376_SubHalo as hal,
+	RefL0025N0376_FOF as fof
+WHERE
+	hal.GroupID = fof.GroupID AND
+	hal.Mass > 1E14 AND
+	hal.SnapNum = 28 AND
+	hal.StarFormationRate > 0.1
+
+
+
+
+    centre_coords = test_coords
+    inp_data = np.asarray([
+    #   [domain    , sf,  coords at centre of montion  ,rotaxis, rv,   av,ro,ao,hv,ho]
+        [-1.,   0., .25, 7.*h, 11.*h,  10.22*h,  0,0,1,  0, 0, 0, 0, 0, 0],
+        [20.,   60., .29, 12.2787*h, 19.071*h,  17.22*h,  0,0,1,  0, 1/40, 1, 0, 0, 0],
+        [80.,  120.,  .5,   8.434*h,  9.601*h,   4.25*h,  1,1,1,  0, 1/40, 1, 0, 0, 0],
+        [140., 180.,  1.,  16.557*h,  24.49*h, 17.708*h, -1,1,0,  0, 1/40, 3, 0, 0, 0],
+        [199.,   200., 1., 7.*h, 11.*h,  10.22*h,  0,0,1,  0, 0, 0, 0, 0, 0]
+        
+    ])
