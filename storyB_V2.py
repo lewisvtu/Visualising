@@ -60,8 +60,8 @@ def story_board(txt_name, path_file):
 
 	Args:
 
-		txt_name: A txt file of the flight path in the form frame, expansion factor, coordinates, x_basis, y_basis, z_basis
-		path file: The name or relative file path of the txt file
+		 path file:A txt file of the flight path in the form frame, expansion factor, coordinates, x_basis, y_basis, z_basis
+		 txt_name:The name or relative file path of the txt file
 
 	 '''
 
