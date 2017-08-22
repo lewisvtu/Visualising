@@ -138,7 +138,6 @@ def story_board(txt_name, path_file, sim):
 			plt.savefig(txt_name + str(i))
 			plt.clf()
 
-
 # story_board( txt_name, "galaxy_tour4_.txt")
 # stp = timer()
 
