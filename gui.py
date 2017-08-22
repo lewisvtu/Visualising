@@ -6,6 +6,9 @@ matplotlib.use("TkAgg", warn=False)
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.backend_bases import key_press_handler
 
+from flightplan_generator import create_flight_path
+import copy
+
 class MainWindow(object):
     '''Main window object for aplication'''
     def __init__(self, master):
@@ -41,25 +44,29 @@ class GraphWindow(object):
     '''Window for drawing graphs'''
     def __init__(self, master, fig):
         self.master = master
-        self.draw()
-        self.set_graph(self, fig, des=False)
-
-    def draw(self):
-        close_b = Button(self.master, text="Close Window",
+        self.frame = Frame(self.master)
+        close_b = Button(self.frame, text="Close Window",
                          command=self.close_window).grid(row=0, column=0)
-        draw_b = Button(self.master, text="Draw Graph",
+        draw_b = Button(self.frame, text="Draw Graph",
                         command=self.draw_graph).grid(row=0, column=3)
-        Label(self.master, text="Flight File Name: ").grid(row=0,column=1)
-        self.fname_e = Entry(self.master).grid(row=0, column=2)
+        Label(self.frame, text="Flight File Name: ").grid(row=0,column=1)
+        self.fname_e = Entry(self.frame).grid(row=0, column=2)
+        self.set_graph(fig, des=False)
 
     def close_window(self):
         self.master.destroy()
+
+
+    def draw_graph(self):
+        fname = self.fname_e.get()
+        figure = utils.plot_from_file(fname)
+        self.set_graph(figure)
 
     def set_graph(self, fig, des=True):
         self.canvas = FigureCanvasTkAgg(fig)
         if des:
             self.canv_widget.destroy()
-        return canvas.get_tk_widget().grid(row=3)
+        self.canv_widget = self.canvas.get_tk_widget().grid(row=3)
 
 
 class DataWindow(object):
@@ -69,17 +76,14 @@ class DataWindow(object):
         self.data_store = data_store
         self.data_entries = []
         self.frame = Frame(self.master)
-        close_b = Button(self.frame, text="Close Window", command=self.close_window)
-        close_b.grid(row=0, column=0)
-        read_b = Button(self.frame, text="Read Data", command=self.read_entry_boxes)
-        read_b.grid(row=0,column=1)
-        add_b = Button(self.frame, text="New Gal", command=self.add_row)
-        add_b.grid(row=0, column=2)
-        clear_b = Button(self.frame, text="Clear All", command=self.clear_entries)
-        clear_b.grid(row=0, column=3)
-        lab_names = ["galaxy", "st fr", "en fr", "trg sf", "trg x", "y", "z", "rot ax: nx", "ny", "nz", "rv", "av", "ro", "ao", "hv", "ho"]
+        close_b = Button(self.frame, text="Close Window", command=self.close_window).grid(row=0, column=0)
+        read_b = Button(self.frame, text="Read Data", command=self.read_entry_boxes).grid(row=0,column=1)
+        add_b = Button(self.frame, text="New Gal", command=self.add_row).grid(row=0, column=2)
+        clear_b = Button(self.frame, text="Clear All", command=self.clear_entries).grid(row=0, column=3)
+        gen_b = Button(self.frame, text="Gen flight file", command=self.gen_flight_plan).grid(row=0, column=4)
+        lab_names = ["galaxy", "st fr", "en fr", "st sf", "en sf", "trg x", "y", "z", "rot ax: nx", "ny", "nz", "rv", "av", "ro", "ao", "hv", "ho"]
         for index, name in enumerate(lab_names):
-            Label(self.frame, text=name).grid(column=index, row=1)
+            Label(self.frame, text=name, width=8).grid(column=index, row=1)
         self.frame.grid()
         self.draw_entry_boxes()
 
@@ -89,8 +93,13 @@ class DataWindow(object):
 
     def add_row(self):
         self.read_entry_boxes()
-        self.data_store.append([0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.])
+        self.data_store.append([0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.])
         self.draw_entry_boxes()
+
+    def gen_flight_plan(self):
+        inp_data = np.asarray(copy.deepcopy(self.data_store))
+        plan_file = create_flight_path(inp_data, True)
+
 
     def draw_entry_boxes(self):
         #Destroy all old widgets
@@ -98,7 +107,7 @@ class DataWindow(object):
             for entry in entry_row:
                 entry.destroy()
         #Remove all old widgets from list
-        self.data_entries = []
+        self.data_entries[:] = []
         for row_no, data_row in enumerate(self.data_store):
             lab = Label(self.frame, text="Galaxy no: %2u"% row_no)
             lab.grid(row=row_no + 2, column = 0)

@@ -198,9 +198,12 @@ def gen_look_bundle(t_data, no_frames):
         #print look_bundle[:, 6]
     return look_bundle
 
-def create_flight_path(inp_data,):
+def create_flight_path(inp_data, mult_h):
     #Gen old style target array
-    targ_data = np.copy(inp_data[:, [0,1,3,4,5]])
+    h= 0.6777
+    if mult_h:
+        inp_data[:,[4,5,6,10,12,14,15]] = inp_data[:,[4,5,6,10,12,14,15]] * h
+    targ_data = np.copy(inp_data[:, [0,1,4,5,6]])
     targ_data[0,0] = targ_data[0,0] + 1
     targ_data[-1, 1] = targ_data[-1,1] - 1
 
@@ -214,9 +217,9 @@ def create_flight_path(inp_data,):
     #Get frames for each galaxy target
     targ_frames = [np.arange(no_of_frames) + start for no_of_frames, start in zip(no_frames_each, dom[:,0])]
     #Specify the centre of each orbital path
-    centre_bundles = [gen_centre_bundle(frame_set, central_coord) for frame_set, central_coord in zip(targ_frames, inp_data[:,3:6])]
+    centre_bundles = [gen_centre_bundle(frame_set, central_coord) for frame_set, central_coord in zip(targ_frames, inp_data[:,4:7])]
     #gen the path functions for each sub path and match to their resp frame domains
-    path_functions = [OrbitalPath(centre_bundle, *args) for centre_bundle, args in zip(centre_bundles, inp_data[:, 6:])]
+    path_functions = [OrbitalPath(centre_bundle, *args) for centre_bundle, args in zip(centre_bundles, inp_data[:, 7:])]
     dom_path_pair = np.c_[dom, path_functions]
     #Gen a combined, piecewise path for the motion
     path = CombinedPath(dom_path_pair)
@@ -226,7 +229,7 @@ def create_flight_path(inp_data,):
     weights = look_pos[:,-1]
     look_pos = look_pos[:,:-1]
     #print look_pos, "\n----------\n", weights, "\n-----------\n"
-    targ_sfs = [np.asarray([sf] * int(no_frames)) + np.linspace(-0.0001, 0.0001, no_frames) for sf, no_frames in zip(inp_data[:,2], no_frames_each)]
+    targ_sfs = [np.linspace(ssf, esf, no_of_frames) for ssf, esf, no_of_frames in zip(inp_data[:,2], inp_data[:,3], no_frames_each)]
     targ_sfs = np.concatenate(targ_sfs).ravel()
     targ_frames = np.concatenate(targ_frames).ravel()
     sfs = utils.get_scalefactors(targ_sfs, targ_frames, frames)
@@ -245,17 +248,16 @@ def create_flight_path(inp_data,):
 
 if __name__ == "__main__":
     print "Actually started running -_- z z z"
-    h = 0.6777
 
     inp_data = np.asarray([
     #   [domain    , sf,  coords at centre of montion  ,rotaxis, rv,   av,ro,ao,hv,ho]
-        [-1.,  0., .25, 7.*h, 11.*h,  10.22*h,  0,0,1,  0, 0, 0, 0, 0, 0],
-        [100.,   300., .29, 12.2787*h, 19.071*h,  17.22*h,  0,0,1,  0, 1/200, 1, 0, 0, 0],
-        [400.,  600.,  .5,   8.434*h,  9.601*h,   4.25*h,  1,1,1,  0, 1/200, 2, 0, 0, 0],
-        [700., 900.,  1.,  16.557*h,  24.49*h, 17.708*h, -1,1,0,  0, 1/200, 3, 0, 0, 0],
-        [999.,   1000., 1., 7.*h, 11.*h,  10.22*h,  0,0,1,  0, 0, 0, 0, 0, 0]
+        [-1.,  0., .25, .25, 7., 11.,  10.22,  0,0,1,  0, 0, 0, 0, 0, 0],
+        [100.,   300., .29, .32, 12.2787, 19.071,  17.22,  0,0,1,  0, 1/200, 1, 0, 0, 0],
+        [400.,  600.,  .475, .525,  8.434,  9.601,   4.25,  1,1,1,  0, 1/200, 2, 0, 0, 0],
+        [700., 900.,  1., 1., 16.557,  24.49, 17.708, -1,1,0,  0, 1/200, 3, 0, 0, 0],
+        [999.,   1000., 1., 1., 7., 11.,  10.22,  0,0,1,  0, 0, 0, 0, 0, 0]
 
     ])
 
 
-    create_flight_path(inp_data)
+    create_flight_path(inp_data, True)

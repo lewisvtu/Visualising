@@ -49,7 +49,7 @@ def plot_from_file(f_name):
 
 def get_scalefactors(targ_sfs, targ_frames, frames):
 	#print targ_sfs, targ_frames, frames
-	#print targ_sfs, targ_frames
+	print targ_sfs, targ_frames
 	log_targ_sfs = np.log10(targ_sfs)
 	lsf_spline = UnivariateSpline(targ_frames, log_targ_sfs, s=0)
 	lsfs = lsf_spline(frames)
