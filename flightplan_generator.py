@@ -198,7 +198,7 @@ def gen_look_bundle(t_data, no_frames):
         #print look_bundle[:, 6]
     return look_bundle
 
-def create_flight_path(inp_data, mult_h):
+def create_flight_path(inp_data, mult_h, fname):
     #Gen old style target array
     h= 0.6777
     if mult_h:
@@ -242,7 +242,7 @@ def create_flight_path(inp_data, mult_h):
     tangents = vector_derivs(frames, path, d_frame=2.)
     basis_1 = orthonormalise(tangents, basis_3)
     basis_2 = cross_basis(basis_3, basis_1)
-    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), "galaxy_tour2_.txt")
+    utils.gen_flight_file(frames, sfs, path_coords, np.asarray([basis_1, basis_2,basis_3]), fname)
     return True
 
 
