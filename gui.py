@@ -8,6 +8,8 @@ from matplotlib.backend_bases import key_press_handler
 import numpy as np
 from flightplan_generator import create_flight_path
 import copy
+import storyB_V2
+import os
 
 class MainWindow(object):
     '''Main window object for aplication'''
@@ -44,7 +46,7 @@ class GraphWindow(object):
         self.frame = Frame(self.master)
         Button(self.frame, text="Close Window", command=self.close_window).grid(row=0, column=0)
         Button(self.frame, text="Draw Graph", command=self.draw_graph).grid(row=0, column=3)
-        Button(self.frame, text="Story Board", command=self.story_board).grid(row=0, column=4)
+        Button(self.frame, text="Story Board", command=self.gen_story_board).grid(row=0, column=4)
         Label(self.frame, text="Flight File Name: ").grid(row=0,column=1)
         self.fname_e = Entry(master=self.frame, width=20)
         self.fname_e.grid(row=0, column=2)
@@ -54,8 +56,14 @@ class GraphWindow(object):
     def close_window(self):
         self.master.destroy()
 
-    def story_board(self):
-        pass
+    def gen_story_board(self):
+        fname = self.fname_e.get()
+        fname_root = fname[:-3]
+        save_dir = os.join(fname_root, "images")
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        image_name_base = os.join(save_dir, "image_no_")
+        storyB_V2.story_board(fname, image_name_base)
 
     def draw_graph(self):
         fname = self.fname_e.get()
