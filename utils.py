@@ -49,7 +49,7 @@ def plot_from_file(f_name):
 
 def get_scalefactors(targ_sfs, targ_frames, frames):
 	#print targ_sfs, targ_frames, frames
-	print targ_sfs, targ_frames
+	#print targ_sfs, targ_frames
 	log_targ_sfs = np.log10(targ_sfs)
 	lsf_spline = UnivariateSpline(targ_frames, log_targ_sfs, s=0)
 	lsfs = lsf_spline(frames)
@@ -57,11 +57,11 @@ def get_scalefactors(targ_sfs, targ_frames, frames):
 	sfs[np.where(sfs > 1)] = 1
 	sfs[np.where(sfs < 0)] = 0
 	# Plot the sf graph to confirm
-	fig = plt.figure()
-	ax = fig.add_subplot(111)
-	ax.scatter(targ_frames, targ_sfs)
-	ax.plot(frames, sfs)
-	plt.show()
+	# fig = plt.figure()
+	# ax = fig.add_subplot(111)
+	# ax.scatter(targ_frames, targ_sfs)
+	# ax.plot(frames, sfs)
+	# plt.show()
 	return sfs
 
 def gen_flight_file(frames, sfs, coords, basis_vects, fname, head="RefL0025N0376"):

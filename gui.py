@@ -44,6 +44,7 @@ class GraphWindow(object):
         self.frame = Frame(self.master)
         Button(self.frame, text="Close Window", command=self.close_window).grid(row=0, column=0)
         Button(self.frame, text="Draw Graph", command=self.draw_graph).grid(row=0, column=3)
+        Button(self.frame, text="Story Board", command=self.story_board).grid(row=0, column=4)
         Label(self.frame, text="Flight File Name: ").grid(row=0,column=1)
         self.fname_e = Entry(master=self.frame, width=20)
         self.fname_e.grid(row=0, column=2)
@@ -53,6 +54,8 @@ class GraphWindow(object):
     def close_window(self):
         self.master.destroy()
 
+    def story_board(self):
+        pass
 
     def draw_graph(self):
         fname = self.fname_e.get()
@@ -65,6 +68,8 @@ class GraphWindow(object):
             self.canv_widget.destroy()
         self.canv_widget = self.canvas.get_tk_widget()
         self.canv_widget.grid(row=3)
+        ax = fig.gca()
+        ax.mouse_init()
 
 
 class DataWindow(object):
@@ -75,12 +80,12 @@ class DataWindow(object):
         self.data_entries = []
         self.frame = Frame(self.master)
         Button(self.frame, text="Close Window", command=self.close_window).grid(row=0, column=0)
-        Button(self.frame, text="Read Data", command=self.read_entry_boxes).grid(row=0,column=1)
+        Button(self.frame, text="Save Data", command=self.read_entry_boxes).grid(row=0,column=1)
         Button(self.frame, text="New Gal", command=self.add_row).grid(row=0, column=2)
         Button(self.frame, text="Clear All", command=self.clear_entries).grid(row=0, column=3)
         Button(self.frame, text="Gen flight file", command=self.gen_flight_plan).grid(row=0, column=5)
-        self.f_name = Entry(self.frame, width=20)
-        self.f_name.grid(row=0, column=4)
+        self.fname_e = Entry(self.frame, width=20)
+        self.fname_e.grid(row=0, column=4)
         lab_names = ["galaxy", "st fr", "en fr", "st sf", "en sf", "trg x", "y", "z", "rot ax: nx", "ny", "nz", "rv", "av", "ro", "ao", "hv", "ho"]
         for index, name in enumerate(lab_names):
             Label(self.frame, text=name, width=8).grid(column=index, row=1)
@@ -97,8 +102,10 @@ class DataWindow(object):
         self.draw_entry_boxes()
 
     def gen_flight_plan(self):
+        self.read_entry_boxes()
+        fname = self.fname_e.get()
         inp_data = np.asarray(copy.deepcopy(self.data_store))
-        plan_file = create_flight_path(inp_data, True)
+        plan_file = create_flight_path(inp_data, True, fname)
 
 
     def draw_entry_boxes(self):
