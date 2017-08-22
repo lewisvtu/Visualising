@@ -139,13 +139,9 @@ def story_board(txt_name, path_file):
 			plt.clf()
 
 
-<<<<<<< HEAD
 # story_board( txt_name, "galaxy_tour4_.txt")
 # stp = timer()
-=======
-story_board( txt_name, "galaxy_tour4_.txt")
-stp = timer()
->>>>>>> 7698a2994d347dc452b08b092886e2b899b80b96
+
 
 
 def runTkinter(text, filename):

@@ -14,6 +14,7 @@ import os
 class MainWindow(object):
     '''Main window object for aplication'''
     def __init__(self, master):
+        self.fname = ""
         self.master = master
         self.data_store = []
         self.fig = plt.figure()
@@ -59,11 +60,12 @@ class GraphWindow(object):
     def gen_story_board(self):
         fname = self.fname_e.get()
         fname_root = fname[:-3]
-        save_dir = os.join(fname_root, "images")
+        save_dir = os.path.join(fname_root, "images")
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
-        image_name_base = os.join(save_dir, "image_no_")
-        storyB_V2.story_board(fname, image_name_base)
+        image_name_base = os.path.join(save_dir, "image_no_")
+        storyB_V2.story_board(image_name_base, fname)
+
 
     def draw_graph(self):
         fname = self.fname_e.get()
