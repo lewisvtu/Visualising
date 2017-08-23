@@ -111,9 +111,9 @@ class Spline3D:
 		Creates the Spline object
 		'''
 		fks, xks, yks, zks = bundle.T
-		self.x_spline = UnivariateSpline(fks, xks, k=k)
-		self.y_spline = UnivariateSpline(fks, yks, k=k)
-		self.z_spline = UnivariateSpline(fks, zks, k=k)
+		self.x_spline = UnivariateSpline(fks, xks, k=k, s=3)
+		self.y_spline = UnivariateSpline(fks, yks, k=k, s=3)
+		self.z_spline = UnivariateSpline(fks, zks, k=k, s=3)
 		# self.fks = fks
 		# self.xks = xks
 		# self.yks = yks

@@ -61,7 +61,7 @@ def story_board(txt_name, path_file, sim):
 	""" % (h,h,h, sim, sim)
 
 	#        PROG.MassType_DM > 1.0e11 and
-	filename = "%s_DBS.p"
+	filename = "%s_DBS.p" % sim
 	boxsize = 25 * h
 	dbs_data = dbsPull(SQL, filename)
 

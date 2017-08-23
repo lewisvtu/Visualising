@@ -153,9 +153,9 @@ class CombinedPath(object):
             if next_start - current_end > 0:
                 #if gap, make new spline
                 before_func = self.func_domain[index][2]
-                before_frames = np.arange(current_end - 1, current_end + 1)
+                before_frames = np.arange(current_end - 2, current_end + 1)
                 after_func = self.func_domain[index + 1][2]
-                after_frames = np.arange(next_start, next_start+2)
+                after_frames = np.arange(next_start, next_start+3)
                 before_bundle = np.c_[before_frames, before_func(before_frames)]
                 after_bundle = np.c_[after_frames, after_func(after_frames)]
                 tot_bundle = np.r_[before_bundle, after_bundle]
@@ -176,25 +176,32 @@ class CombinedPath(object):
         return out
 
 def gen_look_bundle(t_data, no_frames):
-    #print no_frames
+    '''
+    A "look bundle" is just and array of two coords to look at, and a weight.
+    For each frame, the final look vector will be a linear combination of these two, weighted
+    towards the primary with the weight value.
+    Args:
+        t_data [array]: List of primary target coords and the domains they are defined for
+            the scripted section of path [start_frame, end_frame, targ_x,y,z]
+    '''
     look_bundle = np.zeros((no_frames, 7))
-    #print look_bundle
     tmp = np.asarray([[no_frames,no_frames,0.,0.,0.]])
     #print t_data, "\n---------\n", tmp
     t_data = np.r_[t_data, tmp]
     for index in range(len(t_data) - 1):
+        #Unpack the domain start and end, for the current frame (cds, cde)
+        #and the current target coords (ctgx, ctgy, ctgz)
         cds, cde, ctgx, ctgy, ctgz = t_data[index]
         cds, cde = int(cds), int(cde)
+        #save current target as vector as it's easier to use
         ctg = np.asarray([ctgx,ctgy,ctgz])
+        #Do exact same for the next frame, named similarly
         nds, nde, ntgx, ntgy, ntgz = t_data[index+1]
         nds, nde = int(nds), int(nde)
         ntg = np.asarray([ntgx,ntgy,ntgz])
-        #print ctg,ntg
         look_bundle[cds:nds, :6] = np.r_[ctg,ntg]
         look_bundle[cds:cde, 6] = 1
-        #print cde, nds
         look_bundle[cde:nds, 6] = np.logspace(0,-2,nds-cde)
-        #print look_bundle[:, 6]
     return look_bundle
 
 def create_flight_path(inp_data, mult_h, fname):
@@ -250,15 +257,21 @@ def create_flight_path(inp_data, mult_h, fname):
 if __name__ == "__main__":
     print "Actually started running -_- z z z"
 
+    '''
+    You see the domain starts at -1 rather than 0. That's just a thing we have to accept and work with
+    The explanation I can give is that we are defining the domains of the path functions, and in finding
+    the derivative of the 0th frame, we need to look back to the position at negative frames. ;(
+    '''
+
     inp_data = np.asarray([
     #   [domain    , sf,  coords at centre of montion  ,rotaxis, rv,   av,ro,ao,hv,ho]
         [-1.,  0., .25, .25, 7., 11.,  10.22,  0,0,1,  0, 0, 0, 0, 0, 0],
-        [100.,   300., .29, .32, 12.2787, 19.071,  17.22,  0,0,1,  0, 1/200, 1, 0, 0, 0],
-        [400.,  600.,  .50, .55,  8.434,  9.601,   4.25,  1,1,1,  0, 1/200, 2, 0, 0, 0],
-        [700., 900.,  1., 1., 16.557,  24.49, 17.708, -1,1,0,  0, 1/200, 3, 0, 0, 0],
-        [999.,   1000., 1., 1., 7., 11.,  10.22,  0,0,1,  0, 0, 0, 0, 0, 0]
+        [100.,   300., .29, .32, 12.2787, 19.071,  17.22,  0,0,1,  0, -1/200, 1, 0, 0, 0]
+        #[400.,  600.,  .50, .55,  8.434,  9.601,   4.25,  1,1,1,  0, 1/200, 2, 0, 0, 0],
+        #[700., 900.,  1., 1., 16.557,  24.49, 17.708, -1,1,0,  0, 1/200, 3, 0, 0, 0],
+        #[999.,   1000., 1., 1., 7., 11.,  10.22,  0,0,1,  0, 0, 0, 0, 0, 0]
 
     ])
 
 
-    create_flight_path(inp_data, True)
+    create_flight_path(inp_data, True, "test.txt")

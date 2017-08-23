@@ -94,7 +94,7 @@ class GraphWindow(object):
         if des:
             self.canv_widget.destroy()
         self.canv_widget = self.canvas.get_tk_widget()
-        self.canv_widget.grid()
+        self.canv_widget.pack(fill=BOTH, expand=1)
         ax = fig.gca()
         ax.mouse_init()
 
